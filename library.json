@@ -1,0 +1,20 @@
+{
+    "name": "LuosHAL",
+    "keywords": "robus,network,microservice,luos,operating system,os,embedded,communication,module,ST",
+    "description": "Luos Hardware Abstraction Layer",
+    "version": "0.0.1",
+    "authors": {
+        "name": "Luos",
+        "url": "https://luos.io"
+    },
+    "build": {
+        "flags": [
+            "-I Inc"
+        ],
+        "extraScript": "select_board_script.py"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Luos-io/luoshal"
+    }
+}
