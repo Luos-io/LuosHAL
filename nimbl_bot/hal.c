@@ -1,15 +1,23 @@
 #include "hal.h"
 #include "reception.h"
-#include "stm32g4xx_ll_usart.h"
-#include "usart.h"
-#include "gpio.h"
-#include "stm32g4xx_hal.h"
-#include "main.h"
-#include <stdio.h>
-#include "crc.h"
-#include "detection.h"
+#include "context.h"
 
-volatile unsigned char *crc_ptr;
+#include "stm32g4xx_ll_usart.h"
+
+/*******************************************************************************
+ * Definitions
+ ******************************************************************************/
+
+/*******************************************************************************
+ * Variables
+ ******************************************************************************/
+CRC_HandleTypeDef hcrc;
+
+/*******************************************************************************
+ * Function
+ ******************************************************************************/
+void HAL_EnableTxLockDetection(void);
+void HAL_DisableTxLockDetection(void);
 
 /**
  * \fn void USART3_IRQHandler(void)
@@ -49,8 +57,41 @@ char HAL_is_tx_lock(void)
     }
     else
     {
-        return (READ_BIT(USART1->ISR, USART_ISR_BUSY) == (USART_ISR_BUSY));
+        return (READ_BIT(USART3->ISR, USART_ISR_BUSY) == (USART_ISR_BUSY));
     }
+}
+
+/**
+ * \fn HAL_EnableTxLockDetection(void)
+ * \brief PTP interrupt management
+ */
+void HAL_EnableTxLockDetection(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	GPIO_InitStruct.Pin = ROBUS_TX_DETECT_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(ROBUS_TX_DETECT_Port, &GPIO_InitStruct);
+}
+/**
+ * \fn HAL_DisableTxLockDetection(void)
+ * \brief PTP interrupt management
+ */
+void HAL_DisableTxLockDetection(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	GPIO_InitStruct.Pin = ROBUS_TX_DETECT_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(ROBUS_TX_DETECT_Port, &GPIO_InitStruct);
+}
+/**
+ * \fn HAL_is_tx_lock(void)
+ * \brief PTP interrupt management
+ */
+void HAL_LockTx(uint8_t lock)
+{
+	ctx.tx_lock = lock;
 }
 
 /**
@@ -69,8 +110,74 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         ptp_handler(BRANCH_B);
         return;
     }
+    if (GPIO_Pin == ROBUS_TX_DETECT_Pin)
+    {
+        HAL_LockTx(true);
+        return;
+    }
 }
+/**
+ * \fn unsigned char crc(unsigned char* data, unsigned char size)
+ * \brief generate a CRC
+ *
+ * \param *data data table
+ * \param size data size
+ *
+ * \return CRC value
+ */
+void set_baudrate(unsigned int baudrate)
+{
+    __HAL_RCC_USART3_CLK_ENABLE();
 
+    LL_USART_InitTypeDef USART_InitStruct;
+
+    // Initialise USART3
+    LL_USART_Disable(USART3);
+    USART_InitStruct.PrescalerValue = LL_USART_PRESCALER_DIV1;
+    USART_InitStruct.BaudRate = baudrate;
+    USART_InitStruct.DataWidth = LL_USART_DATAWIDTH_8B;
+    USART_InitStruct.StopBits = LL_USART_STOPBITS_1;
+    USART_InitStruct.Parity = LL_USART_PARITY_NONE;
+    USART_InitStruct.TransferDirection = LL_USART_DIRECTION_TX_RX;
+    USART_InitStruct.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
+    USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
+    while(LL_USART_Init(USART3, &USART_InitStruct) != SUCCESS);
+    LL_USART_Enable(USART3);
+
+    // Enable Reception interrupt
+    LL_USART_EnableIT_RXNE(USART3);
+    HAL_NVIC_EnableIRQ(USART3_IRQn);
+    HAL_NVIC_SetPriority(USART3_IRQn, 0, 1);
+}
+/**
+ * \fn unsigned char crc(unsigned char* data, unsigned char size)
+ * \brief generate a CRC
+ *
+ * \param *data data table
+ * \param size data size
+ *
+ * \return CRC value
+ */
+void crc_init(void)
+{
+    __HAL_RCC_CRC_CLK_ENABLE();
+    hcrc.Instance = CRC;
+    hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_DISABLE;
+    hcrc.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
+    hcrc.Init.GeneratingPolynomial = 7;
+    hcrc.Init.CRCLength = CRC_POLYLENGTH_16B;
+    hcrc.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
+    hcrc.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
+    hcrc.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
+    if (HAL_CRC_Init(&hcrc) != HAL_OK)
+    {
+    while(1);
+    }
+    if (HAL_CRCEx_Init(&hcrc) != HAL_OK)
+    {
+      while(1);
+    }
+}
 /**
  * \fn unsigned char crc(unsigned char* data, unsigned char size)
  * \brief generate a CRC
@@ -82,6 +189,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
  */
 void crc(unsigned char *data, unsigned short size, unsigned char *crc)
 {
+	CRC_HandleTypeDef hcrc;
+
     unsigned short calc;
     if (size > 1)
     {
@@ -95,77 +204,109 @@ void crc(unsigned char *data, unsigned short size, unsigned char *crc)
     crc[1] = (unsigned char)(calc >> 8);
 }
 
+/**
+ * \fn reverse_detection(void)
+ * \brief
+ */
 void reverse_detection(branch_t branch)
 {
     GPIO_InitTypeDef GPIO_InitStruct;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING; // reverse the detection edge
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    if (branch == BRANCH_A)
-    {
-        GPIO_InitStruct.Pin = ROBUS_PTPA_Pin;
-        HAL_GPIO_Init(ROBUS_PTPA_GPIO_Port, &GPIO_InitStruct);
-    }
-    else if (branch == BRANCH_B)
-    {
-        GPIO_InitStruct.Pin = ROBUS_PTPB_Pin;
-        HAL_GPIO_Init(ROBUS_PTPB_GPIO_Port, &GPIO_InitStruct);
-    }
-}
 
-void set_PTP(branch_t branch)
-{
-    GPIO_InitTypeDef GPIO_InitStruct;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP; // Clean edge/state detection and set the PTP pin as output
     if (branch == BRANCH_A)
     {
-        GPIO_InitStruct.Pin = ROBUS_PTPA_Pin;
-        HAL_GPIO_Init(ROBUS_PTPA_GPIO_Port, &GPIO_InitStruct);
-        HAL_GPIO_WritePin(ROBUS_PTPA_GPIO_Port, ROBUS_PTPA_Pin, GPIO_PIN_SET); // Set the PTPA pin
-    }
-    else if (branch == BRANCH_B)
-    {
-        GPIO_InitStruct.Pin = ROBUS_PTPB_Pin;
-        HAL_GPIO_Init(ROBUS_PTPB_GPIO_Port, &GPIO_InitStruct);
-        HAL_GPIO_WritePin(ROBUS_PTPB_GPIO_Port, ROBUS_PTPB_Pin, GPIO_PIN_SET); // Set the PTPB pin
-    }
-}
-
-void reset_PTP(branch_t branch)
-{
-    GPIO_InitTypeDef GPIO_InitStruct;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    if (branch == BRANCH_A)
-    {
-        // set the PTPA pin as input pull-up IRQ triggered on falling edge event
+        HAL_GPIO_DeInit(ROBUS_PTPA_GPIO_Port, ROBUS_PTPA_Pin);
         __HAL_GPIO_EXTI_CLEAR_IT(ROBUS_PTPA_Pin);
         GPIO_InitStruct.Pin = ROBUS_PTPA_Pin;
         HAL_GPIO_Init(ROBUS_PTPA_GPIO_Port, &GPIO_InitStruct);
     }
     else if (branch == BRANCH_B)
     {
-        // set the PTPB pin as input pull-up IRQ triggered on falling edge event
+        HAL_GPIO_DeInit(ROBUS_PTPB_GPIO_Port, ROBUS_PTPB_Pin);
         __HAL_GPIO_EXTI_CLEAR_IT(ROBUS_PTPB_Pin);
         GPIO_InitStruct.Pin = ROBUS_PTPB_Pin;
         HAL_GPIO_Init(ROBUS_PTPB_GPIO_Port, &GPIO_InitStruct);
     }
 }
-
-void set_baudrate(unsigned int baudrate)
+/**
+ * \fn reverse_detection(void)
+ * \brief
+ */
+void set_PTP(branch_t branch)
 {
-    LL_USART_Disable(USART3);
-    LL_USART_InitTypeDef USART_InitStruct;
-    USART_InitStruct.PrescalerValue = LL_USART_PRESCALER_DIV1;
-    USART_InitStruct.BaudRate = baudrate;
-    USART_InitStruct.DataWidth = LL_USART_DATAWIDTH_8B;
-    USART_InitStruct.StopBits = LL_USART_STOPBITS_1;
-    USART_InitStruct.Parity = LL_USART_PARITY_NONE;
-    USART_InitStruct.TransferDirection = LL_USART_DIRECTION_TX_RX;
-    USART_InitStruct.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
-    USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
-    LL_USART_Init(USART3, &USART_InitStruct);
-    LL_USART_Enable(USART3);
+    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP; // Clean edge/state detection and set the PTP pin as output
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+
+    if (branch == BRANCH_A)
+    {
+        HAL_GPIO_DeInit(ROBUS_PTPA_GPIO_Port, ROBUS_PTPA_Pin);
+        GPIO_InitStruct.Pin = ROBUS_PTPA_Pin;
+        HAL_GPIO_Init(ROBUS_PTPA_GPIO_Port, &GPIO_InitStruct);
+        HAL_GPIO_WritePin(ROBUS_PTPA_GPIO_Port, ROBUS_PTPA_Pin, GPIO_PIN_SET); // Set the PTPA pin
+    }
+    else if (branch == BRANCH_B)
+    {
+        HAL_GPIO_DeInit(ROBUS_PTPB_GPIO_Port, ROBUS_PTPB_Pin);
+        GPIO_InitStruct.Pin = ROBUS_PTPB_Pin;
+        HAL_GPIO_Init(ROBUS_PTPB_GPIO_Port, &GPIO_InitStruct);
+        HAL_GPIO_WritePin(ROBUS_PTPB_GPIO_Port, ROBUS_PTPB_Pin, GPIO_PIN_SET); // Set the PTPB pin
+    }
 }
+/**
+ * \fn reverse_detection(void)
+ * \brief
+ */
+void reset_PTP(branch_t branch)
+{
+    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+
+    if (branch == BRANCH_A)
+    {
+        HAL_GPIO_DeInit(ROBUS_PTPA_GPIO_Port, ROBUS_PTPA_Pin);
+        __HAL_GPIO_EXTI_CLEAR_IT(ROBUS_PTPB_Pin);
+        GPIO_InitStruct.Pin = ROBUS_PTPA_Pin;
+        HAL_GPIO_Init(ROBUS_PTPA_GPIO_Port, &GPIO_InitStruct);
+    }
+    else if (branch == BRANCH_B)
+    {
+        HAL_GPIO_DeInit(ROBUS_PTPB_GPIO_Port, ROBUS_PTPB_Pin);
+        __HAL_GPIO_EXTI_CLEAR_IT(ROBUS_PTPA_Pin);
+        GPIO_InitStruct.Pin = ROBUS_PTPB_Pin;
+        HAL_GPIO_Init(ROBUS_PTPB_GPIO_Port, &GPIO_InitStruct);
+    }
+}
+/**
+ * \fn reverse_detection(void)
+ * \brief
+ */
+unsigned char get_PTP(branch_t branch)
+{
+    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+
+    if (branch == BRANCH_A)
+    {
+        HAL_GPIO_DeInit(ROBUS_PTPA_GPIO_Port, ROBUS_PTPA_Pin);
+        GPIO_InitStruct.Pin = ROBUS_PTPA_Pin;
+        HAL_GPIO_Init(ROBUS_PTPA_GPIO_Port, &GPIO_InitStruct);
+        return (HAL_GPIO_ReadPin(ROBUS_PTPA_GPIO_Port, ROBUS_PTPA_Pin));
+    }
+    else if (branch == BRANCH_B)
+    {
+        HAL_GPIO_DeInit(ROBUS_PTPB_GPIO_Port, ROBUS_PTPB_Pin);
+        GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+        GPIO_InitStruct.Pin = ROBUS_PTPB_Pin;
+        HAL_GPIO_Init(ROBUS_PTPB_GPIO_Port, &GPIO_InitStruct);
+        return (HAL_GPIO_ReadPin(ROBUS_PTPB_GPIO_Port, ROBUS_PTPB_Pin));
+    }
+    return 0;
+}
+
 
 /**
  * \fn void hal_init(void)
@@ -173,23 +314,21 @@ void set_baudrate(unsigned int baudrate)
  */
 void hal_init(void)
 {
-    // Serial init
-    // Enable Reception interrupt
-    LL_USART_EnableIT_RXNE(USART3);
+    crc_init();
+
     // Enable Reception timeout interrupt
     // the timeout expressed in nb of bits duration
     LL_USART_EnableRxTimeout(USART3);
     LL_USART_EnableIT_RTO(USART3);
-    //Disable others
-    LL_USART_DisableIT_TC(USART3);
-    LL_USART_DisableIT_TXE(USART3);
-    //Start USART NVIC
-    HAL_NVIC_EnableIRQ(USART3_IRQn);
     LL_USART_SetRxTimeout(USART3, TIMEOUT_VAL * (8 + 1 + 1));
-    // Setup Robus baudrate
+
     set_baudrate(DEFAULTBAUDRATE);
+
     // Setup data direction
     HAL_GPIO_WritePin(ROBUS_DE_GPIO_Port, ROBUS_DE_Pin, GPIO_PIN_RESET); // Disable emitter | Enable Receiver only - Hardware DE impossible
+    // Setup pull ups pins
+    HAL_GPIO_WritePin(RS485_LVL_UP_GPIO_Port, RS485_LVL_UP_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(RS485_LVL_DOWN_GPIO_Port, RS485_LVL_DOWN_Pin, GPIO_PIN_RESET);
 
     // Setup PTP lines
     reset_PTP(BRANCH_A);
@@ -229,21 +368,6 @@ void hal_wait_transmit_end(void)
     while (!LL_USART_IsActiveFlag_TC(USART3))
         ;
 }
-
-unsigned char get_PTP(branch_t branch)
-{
-
-    if (branch == BRANCH_A)
-    {
-        return (HAL_GPIO_ReadPin(ROBUS_PTPA_GPIO_Port, ROBUS_PTPA_Pin));
-    }
-    else if (branch == BRANCH_B)
-    {
-        return (HAL_GPIO_ReadPin(ROBUS_PTPB_GPIO_Port, ROBUS_PTPB_Pin));
-    }
-    return 0;
-}
-
 /**
  * \fn void hal_disable_irq(void)
  * \brief disable IRQ
@@ -264,6 +388,28 @@ void hal_disable_irq(void)
 void hal_enable_irq(void)
 {
     __enable_irq();
+}
+
+
+/**
+ * \fn void board_enable_irq(void)
+ * \brief enable IRQ
+ *
+ * \return error
+ */
+void node_enable_irq(void)
+{
+    __enable_irq();
+}
+
+void node_disable_irq(void)
+{
+    __disable_irq();
+}
+
+uint32_t node_get_systick(void)
+{
+	return HAL_GetTick();
 }
 
 /**
@@ -311,4 +457,93 @@ void hal_enable_tx(void)
 void hal_disable_tx(void)
 {
     HAL_GPIO_WritePin(ROBUS_DE_GPIO_Port, ROBUS_DE_Pin, GPIO_PIN_RESET);
+}
+/******************************************************************************
+ * @brief
+ *   Luos_HALErasePage: Luos HAL general initialisation
+ * @Param
+ *
+ * @Return
+ *
+ ******************************************************************************/
+void Luos_HALEraseFlashPage(void)
+{
+	uint32_t page_error = 0;
+    FLASH_EraseInitTypeDef s_eraseinit;
+
+    s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
+    s_eraseinit.Banks = FLASH_BANK_2;
+    s_eraseinit.Page = FLASH_PAGE_NB - 1;
+    s_eraseinit.NbPages = 1;
+
+    // Erase Page
+    HAL_FLASH_Unlock();
+    HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
+    HAL_FLASH_Lock();
+}
+/******************************************************************************
+ * @brief
+ *   Luos_HALErasePage: Luos HAL general initialisation
+ * @Param
+ *
+ * @Return
+ *
+ ******************************************************************************/
+void Luos_HALWriteFlash(uint32_t addr, uint16_t size, uint8_t *data)
+{
+    // Before writing we have to erase the entire page
+    // to do that we have to backup current falues by copying it into RAM
+    uint8_t page_backup[PAGE_SIZE];
+    memcpy(page_backup, (void *)ADDRESS_ALIASES_FLASH, PAGE_SIZE);
+
+    // Now we can erase the page
+    Luos_HALEraseFlashPage();
+
+    // Then add input data into backuped value on RAM
+    uint32_t RAMaddr = (addr - ADDRESS_ALIASES_FLASH);
+    memcpy(&page_backup[RAMaddr], data, size);
+
+    // and copy it into flash
+    HAL_FLASH_Unlock();
+
+    // ST hal flash program function write data by uint64_t raw data
+    for (uint32_t i = 0; i < PAGE_SIZE; i += sizeof(uint64_t))
+    {
+        while(HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, i + ADDRESS_ALIASES_FLASH, *(uint64_t *)(&page_backup[i])) != HAL_OK);
+    }
+    HAL_FLASH_Lock();
+}
+/******************************************************************************
+ * @brief
+ *   Luos_HALErasePage: Luos HAL general initialisation
+ * @Param
+ *
+ * @Return
+ *
+ ******************************************************************************/
+void Luos_HALReadFlash(uint32_t addr, uint16_t size, uint8_t *data)
+{
+	memcpy(data, (void *)(addr), size);
+}
+
+//******** Alias management ****************
+void write_alias(unsigned short local_id, char *alias)
+{
+	uint32_t addr = ADDRESS_ALIASES_FLASH + (local_id * (MAX_ALIAS_SIZE + 1));
+	Luos_HALWriteFlash(addr, 16, (uint8_t*)alias);
+}
+
+char read_alias(unsigned short local_id, char *alias)
+{
+    uint32_t addr = ADDRESS_ALIASES_FLASH + (local_id * (MAX_ALIAS_SIZE + 1));
+	Luos_HALReadFlash(addr, 16, (uint8_t*)alias);
+	// Check name integrity
+	if ((((alias[0] < 'A') | (alias[0] > 'Z')) & ((alias[0] < 'a') | (alias[0] > 'z'))) | (alias[0] == '\0'))
+	{
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
 }

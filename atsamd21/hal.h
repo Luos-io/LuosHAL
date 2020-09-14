@@ -6,9 +6,6 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-#define LUOS_UUID ((uint32_t *)0x1FFF7590)
-#define MCUFREQ 170000000
-
 // list of all branches of your configuration.
 typedef enum
 {
@@ -17,13 +14,21 @@ typedef enum
     NO_BRANCH // you have to keep this one at the last position
 } branch_t;
 
+/*******************************************************************************
+ * Variables
+ ******************************************************************************/
+
+/*******************************************************************************
+ * Function
+ ******************************************************************************/
+#define LUOS_UUID ((uint32_t *)0x1FFFF7AC)
+
+#define MCUFREQ 48000000
+
 #define PAGE_SIZE (uint32_t) FLASH_PAGE_SIZE
-#define ADDR_FLASH_BANK1 ((uint32_t)0x08000000)
-#define ADDR_FLASH_BANK2 ((uint32_t)0x08040000)
-#define NB_OF_PAGE	FLASH_PAGE_NB
-#define ADDRESS_LAST_PAGE_FLASH ((uint32_t)0x0801F800)
-#define ADDRESS_ALIASES_FLASH ADDRESS_LAST_PAGE_FLASH
-#define ADDRESS_BOOT_FLAG_FLASH (ADDRESS_LAST_PAGE_FLASH + PAGE_SIZE) - 4
+#define ERASE_SIZE (uint32_t) NVMCTRL_FLASH_ROWSIZE
+#define ADDRESS_ALIASES_FLASH (FLASH_ADDR + FLASH_SIZE - (16*FLASH_PAGE_SIZE))
+#define ADDRESS_BOOT_FLAG_FLASH (FLASH_ADDR + FLASH_SIZE) - 4
 
 
 #define ROBUS_POWER_SENSOR_Pin 			GPIO_PIN_2
@@ -52,15 +57,9 @@ typedef enum
 
 #define ROBUS_TX_DETECT_Pin 			GPIO_PIN_11
 #define ROBUS_TX_DETECT_Port 			GPIOA
-/*******************************************************************************
- * Variables
- ******************************************************************************/
 
-/*******************************************************************************
- * Function
- ******************************************************************************/
 void crc(unsigned char *data, unsigned short size, unsigned char *crc);
-void hal_init(void);
+void LuosHAL_init(void);
 void set_baudrate(unsigned int baudrate);
 unsigned char hal_transmit(unsigned char *data, unsigned short size);
 void send_poke(branch_t branch);
@@ -74,6 +73,7 @@ void hal_enable_rx(void);
 void hal_wait_transmit_end(void);
 void hal_disable_irq(void);
 void hal_enable_irq(void);
+void HAL_LockTx(uint8_t lock);
 void set_PTP(branch_t branch);
 void reset_PTP(branch_t branch);
 unsigned char get_PTP(branch_t branch);
