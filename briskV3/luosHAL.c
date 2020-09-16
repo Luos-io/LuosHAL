@@ -7,6 +7,8 @@
  ******************************************************************************/
 #include "luosHAL.h"
 
+#include <stdbool.h>
+#include <string.h>
 #include "reception.h"
 #include "context.h"
 
