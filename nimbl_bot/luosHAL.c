@@ -9,6 +9,11 @@
 
 #include "reception.h"
 #include "context.h"
+
+//MCU dependencies this HAL is for family STM32G4 you can find
+//the HAL stm32cubeg4 on ST web site
+#include "stm32g4xx_ll_usart.h"
+#include "stm32G4xx_hal.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -20,7 +25,11 @@ CRC_HandleTypeDef hcrc;
 /*******************************************************************************
  * Function
  ******************************************************************************/
-
+static void LuosHAL_FlashInit(void);
+static void LuosHAL_CRCInit(void);
+static void LuosHAL_TimeoutInit(void);
+static void LuosHAL_GPIOInit(void);
+static void LuosHAL_FlashEraseLuosMemoryInfo(void);
 
 /////////////////////////Luos Library Needed function///////////////////////////
 /******************************************************************************
@@ -50,7 +59,7 @@ void LuosHAL_Init(void)
  * @param None
  * @return None
  ******************************************************************************/
-void LuosHAL_IrqStatus(uint8_t Enable)
+void LuosHAL_SetIrqState(uint8_t Enable)
 {
 	if(Enable == true)
 	{
@@ -110,7 +119,7 @@ void LuosHAL_ComInit(uint32_t baudrate)
  * @param None
  * @return None
  ******************************************************************************/
-void LuosHAL_TxStatus(uint8_t Enable)
+void LuosHAL_SetTxState(uint8_t Enable)
 {
 	if(Enable == true)
 	{
@@ -130,7 +139,7 @@ void LuosHAL_TxStatus(uint8_t Enable)
  * @param
  * @return
  ******************************************************************************/
-void LuosHAL_RxStatus(uint8_t Enable)
+void LuosHAL_SetRxState(uint8_t Enable)
 {
 	if(Enable == true)
 	{
@@ -146,7 +155,7 @@ void LuosHAL_RxStatus(uint8_t Enable)
  * @param None
  * @return None
  ******************************************************************************/
-void LuosHAL_TimeoutInit(void)
+static void LuosHAL_TimeoutInit(void)
 {
 
 }
@@ -220,44 +229,33 @@ uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     return 0;
 }
 /******************************************************************************
- * @brief Lock Com transmit
- * @param None
- * @return None
- ******************************************************************************/
-void LuosHAL_SetTxLockStatus(uint8_t status)
-{
-	ctx.tx_lock = status;
-}
-/******************************************************************************
  * @brief get Lock Com transmit status
  * @param None
  * @return Lock status
  ******************************************************************************/
-uint8_t LuosHAL_GetTxLockStatus(void)
+uint8_t LuosHAL_GetTxLockState(void)
 {
-    if (ctx.tx_lock)
-    {
-        return 1;
-    }
-    else
-    {
-    	return (READ_BIT(USART3->ISR, USART_ISR_BUSY) == (USART_ISR_BUSY));
-    }
+	uint8_t result = false;
+	if(READ_BIT(USART3->ISR, USART_ISR_BUSY) == (USART_ISR_BUSY))
+	{
+		result = true;
+	}
+	return result;
 }
 /******************************************************************************
  * @brief Initialisation GPIO
  * @param None
  * @return None
  ******************************************************************************/
-void LuosHAL_GPIOInit(void)
+static void LuosHAL_GPIOInit(void)
 {
     HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_RESET); // Disable emitter | Enable Receiver only - Hardware DE impossible
     HAL_GPIO_WritePin(COM_LVL_UP_PORT, COM_LVL_UP_PIN, GPIO_PIN_SET);// Setup pull up pins
     HAL_GPIO_WritePin(COM_LVL_DOWN_PORT, COM_LVL_DOWN_PIN, GPIO_PIN_RESET);// Setup pull down pins
 
     // Setup PTP lines
-    LuosHAL_PTPDetection(BRANCH_A);
-    LuosHAL_PTPDetection(BRANCH_B);
+    LuosHAL_SetPTPDefaultState(BRANCH_A);
+    LuosHAL_SetPTPDefaultState(BRANCH_B);
     reset_detection();
 }
 /******************************************************************************
@@ -285,7 +283,7 @@ void LuosHAL_GPIOProcess(uint16_t GPIO)
  * @param PTP branch
  * @return None
  ******************************************************************************/
-void LuosHAL_PTPDetection(branch_t branch)
+void LuosHAL_SetPTPDefaultState(branch_t branch)
 {
 	// Pull Down / IT mode / Rising Edge
 	GPIO_InitTypeDef GPIO_InitStruct;
@@ -311,7 +309,7 @@ void LuosHAL_PTPDetection(branch_t branch)
  * @param PTP branch
  * @return None
  ******************************************************************************/
-void LuosHAL_PTPReverseDetection(branch_t branch)
+void LuosHAL_SetPTPReverseState(branch_t branch)
 {
 	// Pull Down / IT mode / Falling Edge
     GPIO_InitTypeDef GPIO_InitStruct;
@@ -333,7 +331,7 @@ void LuosHAL_PTPReverseDetection(branch_t branch)
  * @param PTP branch
  * @return None
  ******************************************************************************/
-void LuosHAL_SetPTP(branch_t branch)
+void LuosHAL_PushPTP(branch_t branch)
 {
 	// Pull Down / Output mode
 	GPIO_InitTypeDef GPIO_InitStruct;
@@ -357,7 +355,7 @@ void LuosHAL_SetPTP(branch_t branch)
  * @param PTP branch
  * @return Line state
  ******************************************************************************/
-uint8_t LuosHAL_GetPTP(branch_t branch)
+uint8_t LuosHAL_GetPTPState(branch_t branch)
 {
 	// Pull Down / Input mode
     if (branch == BRANCH_A)
@@ -375,7 +373,7 @@ uint8_t LuosHAL_GetPTP(branch_t branch)
  * @param None
  * @return None
  ******************************************************************************/
-void LuosHAL_CRCInit(void)
+static void LuosHAL_CRCInit(void)
 {
     __HAL_RCC_CRC_CLK_ENABLE();
     hcrc.Instance = CRC;
@@ -415,7 +413,7 @@ void LuosHAL_ComputeCRC(uint8_t *data, uint16_t size, uint8_t *crc)
  * @param None
  * @return None
  ******************************************************************************/
-void LuosHAL_FlashInit(void)
+static void LuosHAL_FlashInit(void)
 {
 }
 /******************************************************************************
@@ -423,7 +421,7 @@ void LuosHAL_FlashInit(void)
  * @param None
  * @return None
  ******************************************************************************/
-void LuosHAL_FlashEraseLuosMemoryInfo(void)
+static void LuosHAL_FlashEraseLuosMemoryInfo(void)
 {
     uint32_t page_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;

@@ -8,10 +8,11 @@
 #ifndef _HAL_H_
 #define _HAL_H_
 
-#include <main.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
 
-//MCU dependencies
-#include "stm32g4xx_ll_usart.h"
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -69,28 +70,22 @@ typedef enum
  * Function
  ******************************************************************************/
 void LuosHAL_Init(void);
-void LuosHAL_IrqStatus(uint8_t Enable);
+void LuosHAL_SetIrqState(uint8_t Enable);
 uint32_t LuosHAL_GetSystick(void);
-void LuosHAL_ComInit(uint32_t baudrate);
-void LuosHAL_TxStatus(uint8_t Enable);
-void LuosHAL_RxStatus(uint8_t Enable);
-void LuosHAL_TimeoutInit(void);
+void LuosHAL_ComInit(uint32_t Baudrate);
+void LuosHAL_SetTxState(uint8_t Enable);
+void LuosHAL_SetRxState(uint8_t Enable);
 void LuosHAL_ComRxTimeout(void);
 void LuosHAL_ComTxTimeout(void);
 void LuosHAL_ComReceive(void);
 uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size);
-void LuosHAL_SetTxLockStatus(uint8_t status);
-uint8_t LuosHAL_GetTxLockStatus(void);
-void LuosHAL_GPIOInit(void);
+uint8_t LuosHAL_GetTxLockState(void);
 void LuosHAL_GPIOProcess(uint16_t GPIO);
-void LuosHAL_PTPDetection(branch_t branch);
-void LuosHAL_PTPReverseDetection(branch_t branch);
-void LuosHAL_SetPTP(branch_t branch);
-uint8_t LuosHAL_GetPTP(branch_t branch);
-void LuosHAL_CRCInit(void);
+void LuosHAL_SetPTPDefaultState(branch_t branch);
+void LuosHAL_SetPTPReverseState(branch_t branch);
+void LuosHAL_PushPTP(branch_t branch);
+uint8_t LuosHAL_GetPTPState(branch_t branch);
 void LuosHAL_ComputeCRC(uint8_t *data, uint16_t size, uint8_t *crc);
-void LuosHAL_FlashInit(void);
-void LuosHAL_FlashEraseLuosMemoryInfo(void);
 void LuosHAL_FlashWriteLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data);
 void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data);
 
