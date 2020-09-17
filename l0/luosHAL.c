@@ -199,7 +199,7 @@ void LuosHAL_ComReceive(void)
         // Check if a timeout on reception occure
         if (ctx.tx_lock)
         {
-            timeout();
+        	Recep_Timeout();
         }
         else
         {
@@ -267,7 +267,7 @@ static void LuosHAL_GPIOInit(void)
     // Setup PTP lines
     LuosHAL_SetPTPDefaultState(BRANCH_A);
     LuosHAL_SetPTPDefaultState(BRANCH_B);
-    reset_detection();
+    Detec_ResetDetection();
 }
 /******************************************************************************
  * @brief callback for GPIO IT
@@ -279,12 +279,12 @@ void LuosHAL_GPIOProcess(uint16_t GPIO)
 	//Process for PTP Detetion
 	if (GPIO == PTPA_PIN)
     {
-        ptp_handler(BRANCH_A);
+		Detec_PtpHandler(BRANCH_A);
         return;
     }
     else if (GPIO == PTPB_PIN)
     {
-        ptp_handler(BRANCH_B);
+    	Detec_PtpHandler(BRANCH_B);
         return;
     }
     //Process For Com Transmit Detection
