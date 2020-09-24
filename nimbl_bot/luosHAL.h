@@ -12,7 +12,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -30,37 +29,37 @@ typedef enum
 #define PAGE_SIZE (uint32_t) FLASH_PAGE_SIZE
 #define ADDR_FLASH_BANK1 ((uint32_t)0x08000000)
 #define ADDR_FLASH_BANK2 ((uint32_t)0x08040000)
-#define NB_OF_PAGE	FLASH_PAGE_NB
+#define NB_OF_PAGE FLASH_PAGE_NB
 #define ADDRESS_LAST_PAGE_FLASH ((uint32_t)0x0801F800)
 #define ADDRESS_ALIASES_FLASH ADDRESS_LAST_PAGE_FLASH
 #define ADDRESS_BOOT_FLAG_FLASH (ADDRESS_LAST_PAGE_FLASH + PAGE_SIZE) - 4
 
-#define COM_LVL_DOWN_PIN	 		GPIO_PIN_5
-#define COM_LVL_DOWN_PORT	 		GPIOA
+#define COM_LVL_DOWN_PIN GPIO_PIN_5
+#define COM_LVL_DOWN_PORT GPIOA
 
-#define COM_LVL_UP_PIN 				GPIO_PIN_6
-#define COM_LVL_UP_PORT 			GPIOA
+#define COM_LVL_UP_PIN GPIO_PIN_6
+#define COM_LVL_UP_PORT GPIOA
 
-#define PTPA_PIN 					GPIO_PIN_8
-#define PTPA_PORT					GPIOA
+#define PTPA_PIN GPIO_PIN_8
+#define PTPA_PORT GPIOA
 
-#define PTPB_PIN					GPIO_PIN_13
-#define PTPB_PORT					GPIOB
+#define PTPB_PIN GPIO_PIN_13
+#define PTPB_PORT GPIOB
 
-#define RX_EN_PIN				 	GPIO_PIN_14
-#define RX_EN_PORT					GPIOB
+#define RX_EN_PIN GPIO_PIN_14
+#define RX_EN_PORT GPIOB
 
-#define TX_EN_PIN					GPIO_PIN_15
-#define TX_EN_PORT 					GPIOB
+#define TX_EN_PIN GPIO_PIN_15
+#define TX_EN_PORT GPIOB
 
-#define COM_TX_PIN 					GPIO_PIN_9
-#define COM_TX_PORT					GPIOA
+#define COM_TX_PIN GPIO_PIN_9
+#define COM_TX_PORT GPIOA
 
-#define COM_RX_PIN 					GPIO_PIN_10
-#define COM_RX_PORT 				GPIOA
+#define COM_RX_PIN GPIO_PIN_10
+#define COM_RX_PORT GPIOA
 
-#define TX_LOCK_DETECT_PIN 			GPIO_PIN_11
-#define TX_LOCK_DETECT_PORT			GPIOA
+#define TX_LOCK_DETECT_PIN GPIO_PIN_11
+#define TX_LOCK_DETECT_PORT GPIOA
 
 /*******************************************************************************
  * Variables
