@@ -257,7 +257,6 @@ static void LuosHAL_GPIOInit(void)
     // Setup PTP lines
     LuosHAL_SetPTPDefaultState(BRANCH_A);
     LuosHAL_SetPTPDefaultState(BRANCH_B);
-    Detec_ResetDetection();
 }
 /******************************************************************************
  * @brief callback for GPIO IT

@@ -62,7 +62,6 @@ void LuosHAL_init(void)
     // Setup PTP lines
     reset_PTP(BRANCH_A);
     reset_PTP(BRANCH_B);
-    reset_detection();
 }
 /**
  * \fn void USART1_IRQHandler(void)
