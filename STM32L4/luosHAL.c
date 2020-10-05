@@ -15,7 +15,6 @@
 //MCU dependencies this HAL is for family STM32l4 you can find
 //the HAL stm32cubel4 on ST web site
 #include "stm32l4xx_ll_usart.h"
-#include "stm32l4xx_hal.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -23,6 +22,7 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
+GPIO_InitTypeDef GPIO_InitStruct= {0};
 CRC_HandleTypeDef hcrc;
 /*******************************************************************************
  * Function
@@ -32,6 +32,7 @@ static void LuosHAL_CRCInit(void);
 static void LuosHAL_TimeoutInit(void);
 static void LuosHAL_GPIOInit(void);
 static void LuosHAL_FlashEraseLuosMemoryInfo(void);
+static inline void LuosHAL_ComReceive(void);
 
 /////////////////////////Luos Library Needed function///////////////////////////
 /******************************************************************************
@@ -41,19 +42,19 @@ static void LuosHAL_FlashEraseLuosMemoryInfo(void);
  ******************************************************************************/
 void LuosHAL_Init(void)
 {
-    //IO Initialisation
+    //IO Initialization
     LuosHAL_GPIOInit();
 
-    // Flash Initialisation
+    // Flash Initialization
     LuosHAL_FlashInit();
 
-    // CRC Initialisation
+    // CRC Initialization
     LuosHAL_CRCInit();
 
-    //Com Initialisation
+    //Com Initialization
     LuosHAL_ComInit(DEFAULTBAUDRATE);
 
-    //Timout Initialisation
+    //Timeout Initialization
     LuosHAL_TimeoutInit();
 }
 /******************************************************************************
@@ -88,12 +89,12 @@ uint32_t LuosHAL_GetSystick(void)
  ******************************************************************************/
 void LuosHAL_ComInit(uint32_t baudrate)
 {
-    __HAL_RCC_USART3_CLK_ENABLE();
+    LUOS_COM_CLOCK_ENABLE();
 
     LL_USART_InitTypeDef USART_InitStruct;
 
-    // Initialise USART3
-    LL_USART_Disable(USART3);
+    // Initialise USART1
+    LL_USART_Disable(LUOS_COM);
     USART_InitStruct.BaudRate = baudrate;
     USART_InitStruct.DataWidth = LL_USART_DATAWIDTH_8B;
     USART_InitStruct.StopBits = LL_USART_STOPBITS_1;
@@ -101,20 +102,20 @@ void LuosHAL_ComInit(uint32_t baudrate)
     USART_InitStruct.TransferDirection = LL_USART_DIRECTION_TX_RX;
     USART_InitStruct.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
     USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
-    while (LL_USART_Init(USART3, &USART_InitStruct) != SUCCESS)
+    while (LL_USART_Init(LUOS_COM, &USART_InitStruct) != SUCCESS)
         ;
-    LL_USART_Enable(USART3);
+    LL_USART_Enable(LUOS_COM);
 
     // Enable Reception timeout interrupt
     // the timeout expressed in nb of bits duration
-    LL_USART_EnableRxTimeout(USART3);
-    LL_USART_EnableIT_RTO(USART3);
-    LL_USART_SetRxTimeout(USART3, TIMEOUT_VAL * (8 + 1 + 1));
+    LL_USART_EnableRxTimeout(LUOS_COM);
+    LL_USART_EnableIT_RTO(LUOS_COM);
+    LL_USART_SetRxTimeout(LUOS_COM, TIMEOUT_VAL * (8 + 1 + 1));
 
     // Enable Reception interrupt
-    LL_USART_EnableIT_RXNE(USART3);
-    HAL_NVIC_EnableIRQ(USART3_IRQn);
-    HAL_NVIC_SetPriority(USART3_IRQn, 0, 1);
+    LL_USART_EnableIT_RXNE(LUOS_COM);
+    HAL_NVIC_EnableIRQ(LUOS_COM_IRQ);
+    HAL_NVIC_SetPriority(LUOS_COM_IRQ, 0, 1);
 }
 /******************************************************************************
  * @brief Tx enable/disable relative to com
@@ -175,7 +176,7 @@ void LuosHAL_ComRxTimeout(void)
  ******************************************************************************/
 void LuosHAL_ComTxTimeout(void)
 {
-    while (!LL_USART_IsActiveFlag_TC(USART3))
+    while (!LL_USART_IsActiveFlag_TC(LUOS_COM))
         ;
 }
 /******************************************************************************
@@ -183,29 +184,29 @@ void LuosHAL_ComTxTimeout(void)
  * @param None
  * @return None
  ******************************************************************************/
-void LuosHAL_ComReceive(void)
+static inline void LuosHAL_ComReceive(void)
 {
     // check if we receive a data
-    if ((LL_USART_IsActiveFlag_RXNE(USART3) != RESET) && (LL_USART_IsEnabledIT_RXNE(USART3) != RESET))
+    if ((LL_USART_IsActiveFlag_RXNE(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RXNE(LUOS_COM) != RESET))
     {
-        uint8_t data = LL_USART_ReceiveData8(USART3);
+        uint8_t data = LL_USART_ReceiveData8(LUOS_COM);
         ctx.data_cb(&data); // send reception byte to state machine
     }
     // Check if a timeout on reception occure
-    if ((LL_USART_IsActiveFlag_RTO(USART3) != RESET) && (LL_USART_IsEnabledIT_RTO(USART3) != RESET))
+    if ((LL_USART_IsActiveFlag_RTO(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RTO(LUOS_COM) != RESET))
     {
         if (ctx.tx_lock)
         {
-            timeout();
+            Recep_Timeout();
         }
         else
         {
             //ERROR
         }
-        LL_USART_ClearFlag_RTO(USART3);
-        LL_USART_SetRxTimeout(USART3, TIMEOUT_VAL * (8 + 1 + 1));
+        LL_USART_ClearFlag_RTO(LUOS_COM);
+        LL_USART_SetRxTimeout(LUOS_COM, TIMEOUT_VAL * (8 + 1 + 1));
     }
-    USART3->ICR = 0XFFFFFFFF;
+    LUOS_COM->ICR = 0XFFFFFFFF;
 }
 /******************************************************************************
  * @brief Process data transmit
@@ -216,7 +217,7 @@ uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
 {
     for (unsigned short i = 0; i < size; i++)
     {
-        while (!LL_USART_IsActiveFlag_TXE(USART3))
+        while (!LL_USART_IsActiveFlag_TXE(LUOS_COM))
         {
         }
         if (ctx.collision)
@@ -225,7 +226,7 @@ uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
             ctx.collision = FALSE;
             return 1;
         }
-        LL_USART_TransmitData8(USART3, *(data + i));
+        LL_USART_TransmitData8(LUOS_COM, *(data + i));
     }
     return 0;
 }
@@ -236,7 +237,24 @@ uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
  ******************************************************************************/
 void LuosHAL_SetTxLockDetecState(uint8_t Enable)
 {
-
+    if((TX_LOCK_DETECT_PIN != DISABLE)||(TX_LOCK_DETECT_PORT != DISABLE))
+    {
+        // Set Pin Tx Detec
+        // Input / Pull up
+        GPIO_InitStruct.Pin = TX_LOCK_DETECT_PIN;
+        GPIO_InitStruct.Pull = GPIO_PULLUP;
+        if(Enable == true)
+        {
+            __HAL_GPIO_EXTI_CLEAR_IT(TX_LOCK_DETECT_PIN);
+            GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+            HAL_GPIO_Init(TX_LOCK_DETECT_PORT, &GPIO_InitStruct);
+        }
+        else
+        {
+            GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+            HAL_GPIO_Init(TX_LOCK_DETECT_PORT, &GPIO_InitStruct);
+        }
+    }
 }
 /******************************************************************************
  * @brief get Lock Com transmit status
@@ -246,7 +264,7 @@ void LuosHAL_SetTxLockDetecState(uint8_t Enable)
 uint8_t LuosHAL_GetTxLockState(void)
 {
     uint8_t result = false;
-    if (READ_BIT(USART3->ISR, USART_ISR_BUSY) == (USART_ISR_BUSY))
+    if (READ_BIT(LUOS_COM->ISR, USART_ISR_BUSY) == (USART_ISR_BUSY))
     {
         result = true;
     }
@@ -260,42 +278,43 @@ uint8_t LuosHAL_GetTxLockState(void)
 static void LuosHAL_GPIOInit(void)
 {
     //Activate Clock for PIN choosen in luosHAL
-    #if USE_PORTA == 1
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    #endif
-
-    #if USE_PORTB == 1
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    #endif
-
-    #if USE_PORTC == 1
-    __HAL_RCC_GPIOC_CLK_ENABLE();
-    #endif
-
-    #if USE_PORTD == 1
-    __HAL_RCC_GPIOD_CLK_ENABLE();
-    #endif    
+    PORT_CLOCK_ENABLE();
 
     /*Configure GPIO pin : COM_LVL_DOWN_PIN */
     GPIO_InitStruct.Pin = COM_LVL_DOWN_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(COM_LVL_DOWN_PORT, &GPIO_InitStruct);
+    if((COM_LVL_DOWN_PIN != DISABLE)||(COM_LVL_DOWN_PORT != DISABLE))
+    {
+        HAL_GPIO_WritePin(COM_LVL_DOWN_PORT, COM_LVL_DOWN_PIN, GPIO_PIN_RESET); // Setup pull down pins
+        HAL_GPIO_Init(COM_LVL_DOWN_PORT, &GPIO_InitStruct);
+    }
 
     /*Configure GPIO pin : COM_LVL_UP_PIN */
     GPIO_InitStruct.Pin = COM_LVL_UP_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(COM_LVL_UP_PORT, &GPIO_InitStruct);
+    if((COM_LVL_UP_PIN != DISABLE)||(COM_LVL_UP_PORT != DISABLE))
+    {
+        HAL_GPIO_Init(COM_LVL_UP_PORT, &GPIO_InitStruct);
+        HAL_GPIO_WritePin(COM_LVL_UP_PORT, COM_LVL_UP_PIN, GPIO_PIN_SET);       // Setup pull up pins
+    }
 
     /*Configure GPIO pins : RxEN_Pin */
-    GPIO_InitStruct.Pin = RX_EN_PIN|TX_EN_PIN;
+    GPIO_InitStruct.Pin = RX_EN_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_Init(RX_EN_PORT, &GPIO_InitStruct);
+
+    /*Configure GPIO pins : RxEN_Pin */
+    GPIO_InitStruct.Pin = TX_EN_PIN;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(TX_EN_PORT, &GPIO_InitStruct);
 
     /*Configure GPIO pins : PTPA_Pin */
     GPIO_InitStruct.Pin = PTPA_PIN;
@@ -316,7 +335,7 @@ static void LuosHAL_GPIOInit(void)
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF1_USART1;
+    GPIO_InitStruct.Alternate = COM_TX_AF;
     HAL_GPIO_Init(COM_TX_PORT, &GPIO_InitStruct);
 
     /*Configure GPIO pin : RxPin */
@@ -324,12 +343,9 @@ static void LuosHAL_GPIOInit(void)
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF1_USART1;
+    GPIO_InitStruct.Alternate = COM_RX_AF;
     HAL_GPIO_Init(COM_RX_PORT, &GPIO_InitStruct);
 
-    //Set Network pull
-    HAL_GPIO_WritePin(COM_LVL_UP_PORT, COM_LVL_UP_PIN, GPIO_PIN_SET);       // Setup pull up pins
-    HAL_GPIO_WritePin(COM_LVL_DOWN_PORT, COM_LVL_DOWN_PIN, GPIO_PIN_RESET); // Setup pull down pins
     // Setup PTP lines
     LuosHAL_SetPTPDefaultState(BRANCH_A);
     LuosHAL_SetPTPDefaultState(BRANCH_B);
@@ -337,8 +353,14 @@ static void LuosHAL_GPIOInit(void)
     LuosHAL_SetTxLockDetecState(true);
 
     //activate IT for PTP and TX
-    HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
+    HAL_NVIC_SetPriority(PTPA_IRQ, 0, 0);
+    HAL_NVIC_EnableIRQ(PTPA_IRQ);
+
+    HAL_NVIC_SetPriority(PTPB_IRQ, 0, 0);
+    HAL_NVIC_EnableIRQ(PTPB_IRQ);
+
+    HAL_NVIC_SetPriority(TX_LOCK_DETECT_IRQ, 0, 0);
+    HAL_NVIC_EnableIRQ(TX_LOCK_DETECT_IRQ);
 }
 /******************************************************************************
  * @brief callback for GPIO IT
@@ -359,6 +381,15 @@ void LuosHAL_GPIOProcess(uint16_t GPIO)
         return;
     }
     //Process For Com Transmit Detection
+    else if (GPIO == TX_LOCK_DETECT_PIN)
+    {
+        if(ctx.tx_lock == false)
+        {
+            ctx.tx_lock = true;
+            LuosHAL_SetTxLockDetecState(false);
+        }
+        return;
+    }
 }
 /******************************************************************************
  * @brief Set PTP for Detection on branch
@@ -368,7 +399,6 @@ void LuosHAL_GPIOProcess(uint16_t GPIO)
 void LuosHAL_SetPTPDefaultState(branch_t branch)
 {
     // Pull Down / IT mode / Rising Edge
-    GPIO_InitTypeDef GPIO_InitStruct;
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     if (branch == BRANCH_A)
@@ -394,7 +424,6 @@ void LuosHAL_SetPTPDefaultState(branch_t branch)
 void LuosHAL_SetPTPReverseState(branch_t branch)
 {
     // Pull Down / IT mode / Falling Edge
-    GPIO_InitTypeDef GPIO_InitStruct;
     GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING; // reverse the detection edge
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     if (branch == BRANCH_A)
@@ -416,7 +445,6 @@ void LuosHAL_SetPTPReverseState(branch_t branch)
 void LuosHAL_PushPTP(branch_t branch)
 {
     // Pull Down / Output mode
-    GPIO_InitTypeDef GPIO_InitStruct;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP; // Clean edge/state detection and set the PTP pin as output
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     if (branch == BRANCH_A)
@@ -468,8 +496,7 @@ static void LuosHAL_CRCInit(void)
     hcrc.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
     if (HAL_CRC_Init(&hcrc) != HAL_OK)
     {
-        while (1)
-            ;
+        while (1);
     }
 }
 /******************************************************************************
@@ -543,8 +570,7 @@ void LuosHAL_FlashWriteLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *dat
     // ST hal flash program function write data by uint64_t raw data
     for (uint32_t i = 0; i < PAGE_SIZE; i += sizeof(uint64_t))
     {
-        while (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, i + ADDRESS_ALIASES_FLASH, *(uint64_t *)(&page_backup[i])) != HAL_OK)
-            ;
+        while (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, i + ADDRESS_ALIASES_FLASH, *(uint64_t *)(&page_backup[i])) != HAL_OK);
     }
     HAL_FLASH_Lock();
 }
@@ -559,7 +585,11 @@ void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data
 }
 
 /////////////////////////Special LuosHAL function///////////////////////////
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+void PINOUT_IRQHANDLER(uint16_t GPIO_Pin)
 {
     LuosHAL_GPIOProcess(GPIO_Pin);
+}
+void LUOS_COM_IRQHANDLER()
+{
+    LuosHAL_ComReceive();
 }

@@ -9,12 +9,13 @@
 #define _HAL_H_
 
 #include <stdint.h>
+#include <luosHAL_Config.h>
 
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-#define LUOS_UUID ((uint32_t *)0x1FFFF7AC)
-#define MCUFREQ 48000000
+#define LUOS_UUID
+#define MCUFREQ
 
 // list of all branches of your configuration.
 typedef enum
@@ -23,75 +24,6 @@ typedef enum
     BRANCH_B,
     NO_BRANCH // you have to keep this one at the last position
 } branch_t;
-
-#define PAGE_SIZE (uint32_t) 
-#define ADDRESS_LAST_PAGE_FLASH (uint32_t)
-#define ADDRESS_ALIASES_FLASH ADDRESS_LAST_PAGE_FLASH
-#define ADDRESS_BOOT_FLAG_FLASH (ADDRESS_LAST_PAGE_FLASH + PAGE_SIZE) - 4
-
-// Pinout Com
-#ifndef COM_LVL_DOWN_PIN
-#define COM_LVL_DOWN_PIN 
-#endif
-#ifndef COM_LVL_DOWN_PORT
-#define COM_LVL_DOWN_PORT 
-#endif
-
-#ifndef COM_LVL_UP_PIN
-#define COM_LVL_UP_PIN 
-#endif
-#ifndef COM_LVL_UP_PORT
-#define COM_LVL_UP_PORT 
-#endif
-
-#ifndef PTPA_PIN
-#define PTPA_PIN 
-#endif
-#ifndef PTPA_PORT
-#define PTPA_PORT 
-#endif
-
-#ifndef PTPB_PIN
-#define PTPB_PIN 
-#endif
-#ifndef PTPB_PORT
-#define PTPB_PORT 
-#endif
-
-#ifndef RX_EN_PIN
-#define RX_EN_PIN 
-#endif
-#ifndef RX_EN_PORT
-#define RX_EN_PORT 
-#endif
-
-#ifndef TX_EN_PIN
-#define TX_EN_PIN 
-#endif
-#ifndef TX_EN_PORT
-#define TX_EN_PORT 
-#endif
-
-#ifndef COM_TX_PIN
-#define COM_TX_PIN 
-#endif
-#ifndef COM_TX_PORT
-#define COM_TX_PORT 
-#endif
-
-#ifndef COM_RX_PIN
-#define COM_RX_PIN 
-#endif
-#ifndef COM_RX_PORT
-#define COM_RX_PORT 
-#endif
-
-#ifndef TX_LOCK_DETECT_PIN
-#define TX_LOCK_DETECT_PIN 
-#endif
-#ifndef TX_LOCK_DETECT_PORT
-#define TX_LOCK_DETECT_PORT 
-#endif
 
 /*******************************************************************************
  * Variables
