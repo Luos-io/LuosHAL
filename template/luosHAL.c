@@ -31,6 +31,8 @@ static void LuosHAL_CRCInit(void);
 static void LuosHAL_TimeoutInit(void);
 static void LuosHAL_GPIOInit(void);
 static void LuosHAL_FlashEraseLuosMemoryInfo(void);
+static inline LuosHAL_ComReceive(void);
+static inline LuosHAL_GPIOProcess(uint16_t GPIO);
 
 /////////////////////////Luos Library Needed function///////////////////////////
 /******************************************************************************
@@ -160,7 +162,7 @@ void LuosHAL_ComTxTimeout(void)
  * @param None
  * @return None
  ******************************************************************************/
-void LuosHAL_ComReceive(void)
+static inline LuosHAL_ComReceive(void)
 {
     // IRQ Rx
 
@@ -217,7 +219,7 @@ static void LuosHAL_GPIOInit(void)
  * @param GPIO IT line
  * @return None
  ******************************************************************************/
-void LuosHAL_GPIOProcess(uint16_t GPIO)
+static inline LuosHAL_GPIOProcess(uint16_t GPIO)
 {
     //Process for PTP Detetion
 
@@ -328,7 +330,14 @@ void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data
 }
 
 /////////////////////////Special LuosHAL function///////////////////////////
-
+void PINOUT_IRQHANDLER(uint16_t GPIO_Pin)
+{
+    LuosHAL_GPIOProcess(GPIO_Pin);
+}
+void LUOS_COM_IRQHANDLER()
+{
+    LuosHAL_ComReceive();
+}
 /*
 Your code
 */

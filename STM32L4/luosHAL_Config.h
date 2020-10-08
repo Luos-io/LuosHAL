@@ -74,7 +74,7 @@
 #define TX_LOCK_DETECT_PORT         GPIOA
 #endif
 #ifndef TX_LOCK_DETECT_IRQ
-#define TX_LOCK_DETECT_IRQ          EXTI15_10_IRQn
+#define TX_LOCK_DETECT_IRQ          DISABLE
 #endif
 
 #ifndef RX_EN_PIN

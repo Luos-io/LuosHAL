@@ -18,7 +18,7 @@
  ******************************************************************************/
 #ifndef PORT_CLOCK_ENABLE
 #define PORT_CLOCK_ENABLE()         do { \
-                                    __HAL_RCC_GPIOA_CLK_ENABLE(); \
+                                    __HAL_RCC_GPIOA_CLK_ENABLE();\
                                     __HAL_RCC_GPIOB_CLK_ENABLE();\
                                       } while(0U)
 #endif
@@ -74,7 +74,7 @@
 #define TX_LOCK_DETECT_PORT         GPIOA
 #endif
 #ifndef TX_LOCK_DETECT_IRQ
-#define TX_LOCK_DETECT_IRQ          EXTI4_15_IRQn
+#define TX_LOCK_DETECT_IRQ         DISABLE
 #endif
 
 #ifndef RX_EN_PIN

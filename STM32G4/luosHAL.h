@@ -51,7 +51,6 @@ void LuosHAL_ComTxTimeout(void);
 uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size);
 void LuosHAL_SetTxLockDetecState(uint8_t Enable);
 uint8_t LuosHAL_GetTxLockState(void);
-void LuosHAL_GPIOProcess(uint16_t GPIO);
 void LuosHAL_SetPTPDefaultState(branch_t branch);
 void LuosHAL_SetPTPReverseState(branch_t branch);
 void LuosHAL_PushPTP(branch_t branch);
