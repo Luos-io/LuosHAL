@@ -34,20 +34,19 @@ void LuosHAL_init(void)
 {
     //initialize luos com
     SYSTICK_TimerStart();
-    
+
     //set usart context
     set_baudrate(DEFAULTBAUDRATE);
     SERCOM0_USART_SerialSetup(&serialSetup, 0);
-    
+
     //set receive
     SERCOM0_USART_ReadCallbackRegister(&Luos_HALComRxIRQHandler, 0);
     //SERCOM0_USART_WriteCallbackRegister(&Luos_HALComTxIRQHandler, 0);
-    SERCOM0_USART_Read(&dataReceive, 1 );
-    
-      
-	// Enable Reception timeout interrupt
-	//LL_USART_SetRxTimeout(USART1, TIMEOUT_VAL * (8 + 1 + 1));
-    
+    SERCOM0_USART_Read(&dataReceive, 1);
+
+    // Enable Reception timeout interrupt
+    //LL_USART_SetRxTimeout(USART1, TIMEOUT_VAL * (8 + 1 + 1));
+
     //initialize External Interupt
     EIC_CallbackRegister(EIC_PIN_8, &Luos_HALPTPAIRQHandler, 0);
     EIC_CallbackRegister(EIC_PIN_9, &Luos_HALPTPBIRQHandler, 0);
@@ -62,7 +61,6 @@ void LuosHAL_init(void)
     // Setup PTP lines
     reset_PTP(BRANCH_A);
     reset_PTP(BRANCH_B);
-    reset_detection();
 }
 /**
  * \fn void USART1_IRQHandler(void)
@@ -72,8 +70,8 @@ void LuosHAL_init(void)
 static void Luos_HALComRxIRQHandler(uintptr_t context)
 {
     FlagDataReceive = 1;
-    SERCOM0_USART_Read(&dataReceive, 1 );// set pointer receive and size
-    ctx.data_cb(&dataReceive); // send reception byte to state machine
+    SERCOM0_USART_Read(&dataReceive, 1); // set pointer receive and size
+    ctx.data_cb(&dataReceive);           // send reception byte to state machine
 }
 
 //static void Luos_HALComTxIRQHandler(uintptr_t context)
@@ -103,15 +101,15 @@ static void Luos_HALComRxIRQHandler(uintptr_t context)
  */
 static void Luos_HALPTPAIRQHandler(uintptr_t context)
 {
-		ptp_handler(BRANCH_A);
+    ptp_handler(BRANCH_A);
 }
 static void Luos_HALPTPBIRQHandler(uintptr_t context)
 {
-		ptp_handler(BRANCH_B);
+    ptp_handler(BRANCH_B);
 }
 static void Luos_HALTxDetectIRQHandler(uintptr_t context)
 {
-		//HAL_LockTx(true);
+    //HAL_LockTx(true);
 }
 /**
  * \fn HAL_is_tx_lock(void)
@@ -127,7 +125,7 @@ char HAL_is_tx_lock(void)
  */
 void HAL_EnableTxLockDetection(void)
 {
-	EIC_InterruptEnable(EIC_PIN_4);
+    EIC_InterruptEnable(EIC_PIN_4);
 }
 /**
  * \fn HAL_DisableTxLockDetection(void)
@@ -135,7 +133,7 @@ void HAL_EnableTxLockDetection(void)
  */
 void HAL_DisableTxLockDetection(void)
 {
-	EIC_InterruptDisable(EIC_PIN_4);
+    EIC_InterruptDisable(EIC_PIN_4);
 }
 /**
  * \fn HAL_is_tx_lock(void)
@@ -143,7 +141,7 @@ void HAL_DisableTxLockDetection(void)
  */
 void HAL_LockTx(uint8_t lock)
 {
-	ctx.tx_lock = lock;
+    ctx.tx_lock = lock;
 }
 /**
  * \fn HAL_is_tx_lock(void)
@@ -190,11 +188,11 @@ void crc(unsigned char *data, unsigned short size, unsigned char *crc)
     unsigned short calc;
     if (size > 1)
     {
-        calc = calculate_crc(data,(char) size);  //calculate
+        calc = calculate_crc(data, (char)size); //calculate
     }
     else
     {
-        calc = calculate_crc(data, 1);    //accumalate
+        calc = calculate_crc(data, 1); //accumalate
     }
     crc[0] = (unsigned char)calc;
     crc[1] = (unsigned char)(calc >> 8);
@@ -208,18 +206,17 @@ void set_PTP(branch_t branch)
     //remouve multiplexe
     if (branch == BRANCH_A)
     {
-        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_8);//clear IT flag
+        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_8); //clear IT flag
         EIC_InterruptDisable(EIC_PIN_8);
-        PORT_REGS->GROUP[1].PORT_PINCFG[8] &= ~0x1;//desactivate PIN_MUX PTPA
+        PORT_REGS->GROUP[1].PORT_PINCFG[8] &= ~0x1; //desactivate PIN_MUX PTPA
         PTPA_OutputEnable();
         PTPA_Set();
-       
     }
     else if (branch == BRANCH_B)
     {
-        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_9);//clear IT flag
+        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_9); //clear IT flag
         EIC_InterruptDisable(EIC_PIN_9);
-        PORT_REGS->GROUP[1].PORT_PINCFG[9] &= ~0x1;//desactivate PIN_MUX PTPB
+        PORT_REGS->GROUP[1].PORT_PINCFG[9] &= ~0x1; //desactivate PIN_MUX PTPB
         PTPB_OutputEnable();
         PTPB_Set();
     }
@@ -231,19 +228,19 @@ void set_PTP(branch_t branch)
 void reset_PTP(branch_t branch)
 {
     if (branch == BRANCH_A)
-	{
-        EIC_REGS->EIC_CONFIG[1] |= EIC_CONFIG_SENSE0_RISE;//IT Rising
-		PORT_REGS->GROUP[1].PORT_PINCFG[8] |= 0x1;//activate PIN_MUX PTPA
-        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_8);//clear IT flag
+    {
+        EIC_REGS->EIC_CONFIG[1] |= EIC_CONFIG_SENSE0_RISE; //IT Rising
+        PORT_REGS->GROUP[1].PORT_PINCFG[8] |= 0x1;         //activate PIN_MUX PTPA
+        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_8);       //clear IT flag
         EIC_InterruptEnable(EIC_PIN_8);
-	}
-	else if (branch == BRANCH_B)
-	{
-        EIC_REGS->EIC_CONFIG[1] |= EIC_CONFIG_SENSE1_RISE;//IT Rising
-		PORT_REGS->GROUP[1].PORT_PINCFG[9] |= 0x1;//activate PIN_MUX PTPB
-        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_9);//clear IT flag
+    }
+    else if (branch == BRANCH_B)
+    {
+        EIC_REGS->EIC_CONFIG[1] |= EIC_CONFIG_SENSE1_RISE; //IT Rising
+        PORT_REGS->GROUP[1].PORT_PINCFG[9] |= 0x1;         //activate PIN_MUX PTPB
+        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_9);       //clear IT flag
         EIC_InterruptEnable(EIC_PIN_9);
-	}
+    }
 }
 /**
  * \fn reverse_detection(void)
@@ -252,36 +249,36 @@ void reset_PTP(branch_t branch)
 void reverse_detection(branch_t branch)
 {
     if (branch == BRANCH_A)
-	{
-        EIC_REGS->EIC_CONFIG[1] |= EIC_CONFIG_SENSE0_FALL;//IT Falling
-		PORT_REGS->GROUP[1].PORT_PINCFG[8] |= 0x1;//activate PIN_MUX PTPA
-        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_8);//clear IT flag
+    {
+        EIC_REGS->EIC_CONFIG[1] |= EIC_CONFIG_SENSE0_FALL; //IT Falling
+        PORT_REGS->GROUP[1].PORT_PINCFG[8] |= 0x1;         //activate PIN_MUX PTPA
+        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_8);       //clear IT flag
         EIC_InterruptEnable(EIC_PIN_8);
-	}
-	else if (branch == BRANCH_B)
-	{
-        EIC_REGS->EIC_CONFIG[1] |= EIC_CONFIG_SENSE1_FALL;//IT Falling
-		PORT_REGS->GROUP[1].PORT_PINCFG[9] |= 0x1;//activate PIN_MUX PTPB
-        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_9);//clear IT flag
+    }
+    else if (branch == BRANCH_B)
+    {
+        EIC_REGS->EIC_CONFIG[1] |= EIC_CONFIG_SENSE1_FALL; //IT Falling
+        PORT_REGS->GROUP[1].PORT_PINCFG[9] |= 0x1;         //activate PIN_MUX PTPB
+        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_9);       //clear IT flag
         EIC_InterruptEnable(EIC_PIN_9);
-	}
+    }
 }
 
 unsigned char get_PTP(branch_t branch)
 {
-	if (branch == BRANCH_A)
+    if (branch == BRANCH_A)
     {
-        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_9);//clear IT flag
+        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_9); //clear IT flag
         EIC_InterruptDisable(EIC_PIN_9);
-        PORT_REGS->GROUP[1].PORT_PINCFG[8] &= ~0x1;//desactivate PIN_MUX PTPB
+        PORT_REGS->GROUP[1].PORT_PINCFG[8] &= ~0x1; //desactivate PIN_MUX PTPB
         PTPA_InputEnable();
         return PTPA_Get();
     }
     else if (branch == BRANCH_B)
     {
-        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_9);//clear IT flag
+        EIC_REGS->EIC_INTFLAG |= (1UL << EIC_PIN_9); //clear IT flag
         EIC_InterruptDisable(EIC_PIN_9);
-        PORT_REGS->GROUP[1].PORT_PINCFG[9] &= ~0x1;//desactivate PIN_MUX PTPB
+        PORT_REGS->GROUP[1].PORT_PINCFG[9] &= ~0x1; //desactivate PIN_MUX PTPB
         PTPB_InputEnable();
         return PTPB_Get();
     }
@@ -297,18 +294,20 @@ unsigned char get_PTP(branch_t branch)
  * \return error
  */
 unsigned char hal_transmit(unsigned char *data, unsigned short size)
-{   
+{
     for (unsigned short i = 0; i < size; i++)
     {
         SERCOM0_USART_Write((data + i), 1);
-        while((SERCOM0_REGS->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) != SERCOM_USART_INT_INTFLAG_DRE_Msk);
-        while((FlagDataReceive != 1)&&(FlagRxDisable == false));
+        while ((SERCOM0_REGS->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) != SERCOM_USART_INT_INTFLAG_DRE_Msk)
+            ;
+        while ((FlagDataReceive != 1) && (FlagRxDisable == false))
+            ;
         if (ctx.collision)
         {
             // There is a collision
             ctx.collision = FALSE;
             return 1;
-        }  
+        }
         FlagDataReceive = 0;
     }
     return 0;
@@ -316,7 +315,6 @@ unsigned char hal_transmit(unsigned char *data, unsigned short size)
 
 void hal_wait_transmit_end(void)
 {
-    
 }
 
 /**
@@ -325,10 +323,10 @@ void hal_wait_transmit_end(void)
  *
  * \return error
  */
- void hal_disable_irq(void)
- {
-	 node_disable_irq();
- }
+void hal_disable_irq(void)
+{
+    node_disable_irq();
+}
 
 /**
  * \fn void hal_enable_irq(void)
@@ -336,10 +334,10 @@ void hal_wait_transmit_end(void)
  *
  * \return error
  */
- void hal_enable_irq(void)
- {
-	 node_enable_irq();
- }
+void hal_enable_irq(void)
+{
+    node_enable_irq();
+}
 
 /**
  * \fn void hal_enable_rx(void)
@@ -349,7 +347,7 @@ void hal_wait_transmit_end(void)
  */
 void hal_enable_rx(void)
 {
-	Rx_En_Clear();
+    Rx_En_Clear();
     FlagRxDisable = false;
 }
 
@@ -361,7 +359,7 @@ void hal_enable_rx(void)
  */
 void hal_disable_rx(void)
 {
-	Rx_En_Set();
+    Rx_En_Set();
     FlagRxDisable = true;
 }
 
@@ -373,7 +371,7 @@ void hal_disable_rx(void)
  */
 void hal_enable_tx(void)
 {
-	Tx_En_Set();
+    Tx_En_Set();
 }
 
 /**
@@ -385,7 +383,7 @@ void hal_enable_tx(void)
 void hal_disable_tx(void)
 {
     //uint8_t data = 0;
-	Tx_En_Clear();
+    Tx_En_Clear();
     //SERCOM0_USART_Write( &data, 0 );
 }
 /**
@@ -406,11 +404,10 @@ void node_disable_irq(void)
 
 uint32_t node_get_systick(void)
 {
-	return SYSTICK_TimerCounterGet();
+    return SYSTICK_TimerCounterGet();
 }
 
- //******** Alias management ****************
-
+//******** Alias management ****************
 
 /******************************************************************************
  * @brief
@@ -422,11 +419,10 @@ uint32_t node_get_systick(void)
  ******************************************************************************/
 void Luos_HALEraseFlashPage(void)
 {
-	NVMCTRL_RowErase(ADDRESS_ALIASES_FLASH);
+    NVMCTRL_RowErase(ADDRESS_ALIASES_FLASH);
     NVMCTRL_RowErase(ADDRESS_ALIASES_FLASH + 256);
     NVMCTRL_RowErase(ADDRESS_ALIASES_FLASH + 512);
     NVMCTRL_RowErase(ADDRESS_ALIASES_FLASH + 768);
-    
 }
 /******************************************************************************
  * @brief
@@ -440,8 +436,8 @@ void Luos_HALWriteFlash(uint32_t addr, uint16_t size, uint8_t *data)
 {
     // Before writing we have to erase the entire page
     // to do that we have to backup current falues by copying it into RAM
-    uint8_t page_backup[16*PAGE_SIZE];
-    memcpy(page_backup, (void *)ADDRESS_ALIASES_FLASH, 16*PAGE_SIZE);
+    uint8_t page_backup[16 * PAGE_SIZE];
+    memcpy(page_backup, (void *)ADDRESS_ALIASES_FLASH, 16 * PAGE_SIZE);
 
     // Now we can erase the page
     Luos_HALEraseFlashPage();
@@ -450,7 +446,7 @@ void Luos_HALWriteFlash(uint32_t addr, uint16_t size, uint8_t *data)
     uint32_t RAMaddr = (addr - ADDRESS_ALIASES_FLASH);
     memcpy(&page_backup[RAMaddr], data, size);
 
-    NVMCTRL_PageWrite((uint32_t*)page_backup,  ADDRESS_ALIASES_FLASH);
+    NVMCTRL_PageWrite((uint32_t *)page_backup, ADDRESS_ALIASES_FLASH);
 }
 /******************************************************************************
  * @brief
@@ -462,27 +458,27 @@ void Luos_HALWriteFlash(uint32_t addr, uint16_t size, uint8_t *data)
  ******************************************************************************/
 void Luos_HALReadFlash(uint32_t addr, uint16_t size, uint8_t *data)
 {
-	memcpy(data, (void *)(addr), size);
+    memcpy(data, (void *)(addr), size);
 }
 
 //******** Alias management ****************
 void write_alias(unsigned short local_id, char *alias)
 {
-	uint32_t addr = ADDRESS_ALIASES_FLASH + (local_id * (MAX_ALIAS_SIZE + 1));
-	Luos_HALWriteFlash(addr, 16, (uint8_t*)alias);
+    uint32_t addr = ADDRESS_ALIASES_FLASH + (local_id * (MAX_ALIAS_SIZE + 1));
+    Luos_HALWriteFlash(addr, 16, (uint8_t *)alias);
 }
 
 char read_alias(unsigned short local_id, char *alias)
 {
     uint32_t addr = ADDRESS_ALIASES_FLASH + (local_id * (MAX_ALIAS_SIZE + 1));
-	Luos_HALReadFlash(addr, 16, (uint8_t*)alias);
-	// Check name integrity
-	if ((((alias[0] < 'A') | (alias[0] > 'Z')) & ((alias[0] < 'a') | (alias[0] > 'z'))) | (alias[0] == '\0'))
-	{
-		return 0;
-	}
-	else
-	{
-		return 1;
-	}
+    Luos_HALReadFlash(addr, 16, (uint8_t *)alias);
+    // Check name integrity
+    if ((((alias[0] < 'A') | (alias[0] > 'Z')) & ((alias[0] < 'a') | (alias[0] > 'z'))) | (alias[0] == '\0'))
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
 }
