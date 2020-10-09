@@ -68,10 +68,10 @@
 #endif
 
 #ifndef TX_LOCK_DETECT_PIN
-#define TX_LOCK_DETECT_PIN          GPIO_PIN_11
+#define TX_LOCK_DETECT_PIN          DISABLE
 #endif
 #ifndef TX_LOCK_DETECT_PORT
-#define TX_LOCK_DETECT_PORT         GPIOA
+#define TX_LOCK_DETECT_PORT         DISABLE
 #endif
 #ifndef TX_LOCK_DETECT_IRQ
 #define TX_LOCK_DETECT_IRQ         DISABLE
