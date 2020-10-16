@@ -499,6 +499,17 @@ static void LuosHAL_CRCInit(void)
     }
 }
 /******************************************************************************
+ * @brief Reset CRC
+ * @param pointer to crc value to reset
+ * @return None
+ ******************************************************************************/
+void LuosHAL_ResetCRC(uint8_t *crc)
+{
+    __HAL_CRC_DR_RESET(&hcrc);
+    uint16_t crc_init = 0xFFFF;
+    memcpy(crc,&crc_init,2);
+}
+/******************************************************************************
  * @brief Compute CRC
  * @param None
  * @return None
@@ -506,14 +517,7 @@ static void LuosHAL_CRCInit(void)
 void LuosHAL_ComputeCRC(uint8_t *data, uint16_t size, uint8_t *crc)
 {
     uint16_t calc;
-    if (size > 1)
-    {
-        calc = (unsigned short)HAL_CRC_Calculate(&hcrc, (uint32_t *)data, size);
-    }
-    else
-    {
-        calc = (unsigned short)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, 1);
-    }
+    calc = (unsigned short)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, size);
     crc[0] = (unsigned char)calc;
     crc[1] = (unsigned char)(calc >> 8);
 }
