@@ -503,19 +503,11 @@ static void LuosHAL_CRCInit(void)
  * @param None
  * @return None
  ******************************************************************************/
-void LuosHAL_ComputeCRC(uint8_t *data, uint16_t size, uint8_t *crc)
+void LuosHAL_ComputeCRC(uint8_t *data, uint8_t *crc)
 {
-    uint16_t calc;
-    if (size > 1)
-    {
-        calc = (unsigned short)HAL_CRC_Calculate(&hcrc, (uint32_t *)data, size);
-    }
-    else
-    {
-        calc = (unsigned short)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, 1);
-    }
-    crc[0] = (unsigned char)calc;
-    crc[1] = (unsigned char)(calc >> 8);
+    hcrc.Instance->INIT = *(uint16_t*)crc;
+    __HAL_CRC_DR_RESET(&hcrc);
+    *(uint16_t*)crc = (unsigned short)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, 1);
 }
 /******************************************************************************
  * @brief Flash Initialisation
