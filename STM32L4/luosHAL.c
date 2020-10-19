@@ -24,6 +24,16 @@
  ******************************************************************************/
 GPIO_InitTypeDef GPIO_InitStruct= {0};
 CRC_HandleTypeDef hcrc;
+
+typedef struct
+{
+    uint8_t ID;
+    uint16_t Pin;
+    GPIO_TypeDef *Port;
+    uint8_t IRQ;
+} branch_t;
+
+branch_t PTP[NBR_BRANCH];
 /*******************************************************************************
  * Function
  ******************************************************************************/
@@ -34,6 +44,7 @@ static void LuosHAL_GPIOInit(void);
 static void LuosHAL_FlashEraseLuosMemoryInfo(void);
 static inline void LuosHAL_ComReceive(void);
 static inline void  LuosHAL_GPIOProcess(uint16_t GPIO);
+static void LuosHAL_RegisterPTP(void);
 
 /////////////////////////Luos Library Needed function///////////////////////////
 /******************************************************************************
@@ -302,20 +313,6 @@ static void LuosHAL_GPIOInit(void)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(TX_EN_PORT, &GPIO_InitStruct);
-
-    /*Configure GPIO pins : PTPA_Pin */
-    GPIO_InitStruct.Pin = PTPA_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(PTPA_PORT, &GPIO_InitStruct);
-
-    /*Configure GPIO pins : PTPB_Pin */
-    GPIO_InitStruct.Pin = PTPB_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(PTPB_PORT, &GPIO_InitStruct);
     
     /*Configure GPIO pins : TX_LOCK_DETECT_Pin */
     GPIO_InitStruct.Pin = TX_LOCK_DETECT_PIN;
@@ -347,18 +344,21 @@ static void LuosHAL_GPIOInit(void)
     GPIO_InitStruct.Alternate = COM_RX_AF;
     HAL_GPIO_Init(COM_RX_PORT, &GPIO_InitStruct);
 
-    // Setup PTP lines
-    LuosHAL_SetPTPDefaultState(BRANCH_A);
-    LuosHAL_SetPTPDefaultState(BRANCH_B);
-    //set Lock TX detection
-    LuosHAL_SetTxLockDetecState(true);
-
-    //activate IT for PTP and TX
-    HAL_NVIC_SetPriority(PTPA_IRQ, 0, 0);
-    HAL_NVIC_EnableIRQ(PTPA_IRQ);
-
-    HAL_NVIC_SetPriority(PTPB_IRQ, 0, 0);
-    HAL_NVIC_EnableIRQ(PTPB_IRQ);
+    //configure PTP
+    LuosHAL_RegisterPTP();
+    for(uint8_t i = 0; i < NBR_BRANCH; i++)/*Configure GPIO pins : PTP_Pin */
+    {
+        GPIO_InitStruct.Pin = PTP[i].Pin;
+        GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+        GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+        HAL_GPIO_Init(PTP[i].Port, &GPIO_InitStruct);
+        // Setup PTP lines
+        LuosHAL_SetPTPDefaultState(i);
+        //activate IT for PTP
+        HAL_NVIC_SetPriority(PTP[i].IRQ, 0, 0);
+        HAL_NVIC_EnableIRQ(PTP[i].IRQ);
+    }
 
     if(TX_LOCK_DETECT_IRQ != DISABLE)
     {
@@ -367,6 +367,41 @@ static void LuosHAL_GPIOInit(void)
         HAL_NVIC_SetPriority(TX_LOCK_DETECT_IRQ, 0, 0);
         HAL_NVIC_EnableIRQ(TX_LOCK_DETECT_IRQ);
     }
+}
+/******************************************************************************
+ * @brief Register PTP
+ * @param void
+ * @return None
+ ******************************************************************************/
+static void LuosHAL_RegisterPTP(void)
+{
+#if(NBR_BRANCH >= 1)
+    PTP[0].Pin = PTPA_PIN;
+    PTP[0].Port = PTPA_PORT;
+    PTP[0].IRQ = PTPA_IRQ;
+    PTP[0].ID = 0x01;
+#endif
+
+#if(NBR_BRANCH >= 2)
+    PTP[1].Pin = PTPB_PIN;
+    PTP[1].Port = PTPB_PORT;
+    PTP[1].IRQ = PTPB_IRQ;
+    PTP[1].ID = 0x02;
+#endif
+
+#if(NBR_BRANCH >= 3)
+    PTP[2].Pin = PTPC_PIN;
+    PTP[2].Port = PTPC_PORT;
+    PTP[2].IRQ = PTPC_IRQ;
+    PTP[2].ID = 0x04;
+#endif
+
+#if(NBR_BRANCH >= 4)
+    PTP[3].Pin = PTPD_PIN;
+    PTP[3].Port = PTPD_PORT;
+    PTP[3].IRQ = PTPD_IRQ;
+    PTP[3].ID = 0x08;
+#endif
 }
 /******************************************************************************
  * @brief callback for GPIO IT
@@ -380,14 +415,16 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
     {
 
     }
-    //Process for PTP Detetion
-    if (GPIO == PTPA_PIN)
+    else
     {
-        Detec_PtpHandler(BRANCH_A);
-    }
-    else if (GPIO == PTPB_PIN)
-    {
-        Detec_PtpHandler(BRANCH_B);
+        for(uint8_t i = 0; i < NBR_BRANCH; i++)
+        {
+            if (GPIO == PTP[i].Pin)
+            {
+                Detec_PtpHandler(i);
+                break;
+            }
+        }
     }
 }
 /******************************************************************************
@@ -395,87 +432,51 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
  * @param PTP branch
  * @return None
  ******************************************************************************/
-void LuosHAL_SetPTPDefaultState(branch_t branch)
+void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr)
 {
     // Pull Down / IT mode / Rising Edge
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    if (branch == BRANCH_A)
-    {
-        // set the PTPA pin as input pull-down IRQ triggered on rising edge event
-        __HAL_GPIO_EXTI_CLEAR_IT(PTPA_PIN);
-        GPIO_InitStruct.Pin = PTPA_PIN;
-        HAL_GPIO_Init(PTPA_PORT, &GPIO_InitStruct);
-    }
-    else if (branch == BRANCH_B)
-    {
-        // set the PTPB pin as input pull-down IRQ triggered on rising edge event
-        __HAL_GPIO_EXTI_CLEAR_IT(PTPB_PIN);
-        GPIO_InitStruct.Pin = PTPB_PIN;
-        HAL_GPIO_Init(PTPB_PORT, &GPIO_InitStruct);
-    }
+    __HAL_GPIO_EXTI_CLEAR_IT(PTP[PTPNbr].Pin);
+    GPIO_InitStruct.Pin = PTP[PTPNbr].Pin;
+    HAL_GPIO_Init(PTP[PTPNbr].Port, &GPIO_InitStruct);
 }
 /******************************************************************************
  * @brief Set PTP for reverse detection on branch
  * @param PTP branch
  * @return None
  ******************************************************************************/
-void LuosHAL_SetPTPReverseState(branch_t branch)
+void LuosHAL_SetPTPReverseState(uint8_t PTPNbr)
 {
     // Pull Down / IT mode / Falling Edge
     GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING; // reverse the detection edge
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    if (branch == BRANCH_A)
-    {
-        GPIO_InitStruct.Pin = PTPA_PIN;
-        HAL_GPIO_Init(PTPA_PORT, &GPIO_InitStruct);
-    }
-    else if (branch == BRANCH_B)
-    {
-        GPIO_InitStruct.Pin = PTPB_PIN;
-        HAL_GPIO_Init(PTPB_PORT, &GPIO_InitStruct);
-    }
+    GPIO_InitStruct.Pin = PTP[PTPNbr].Pin;
+    HAL_GPIO_Init(PTP[PTPNbr].Port, &GPIO_InitStruct);
 }
 /******************************************************************************
  * @brief Set PTP line
  * @param PTP branch
  * @return None
  ******************************************************************************/
-void LuosHAL_PushPTP(branch_t branch)
+void LuosHAL_PushPTP(uint8_t PTPNbr)
 {
     // Pull Down / Output mode
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP; // Clean edge/state detection and set the PTP pin as output
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    if (branch == BRANCH_A)
-    {
-        GPIO_InitStruct.Pin = PTPA_PIN;
-        HAL_GPIO_Init(PTPA_PORT, &GPIO_InitStruct);
-        HAL_GPIO_WritePin(PTPA_PORT, PTPA_PIN, GPIO_PIN_SET); // Set the PTPA pin
-    }
-    else if (branch == BRANCH_B)
-    {
-        GPIO_InitStruct.Pin = PTPB_PIN;
-        HAL_GPIO_Init(PTPB_PORT, &GPIO_InitStruct);
-        HAL_GPIO_WritePin(PTPB_PORT, PTPB_PIN, GPIO_PIN_SET); // Set the PTPB pin
-    }
+    GPIO_InitStruct.Pin = PTP[PTPNbr].Pin;
+    HAL_GPIO_Init(PTP[PTPNbr].Port, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(PTP[PTPNbr].Port, PTP[PTPNbr].Pin, GPIO_PIN_SET);
 }
 /******************************************************************************
  * @brief Get PTP line
  * @param PTP branch
  * @return Line state
  ******************************************************************************/
-uint8_t LuosHAL_GetPTPState(branch_t branch)
+uint8_t LuosHAL_GetPTPState(uint8_t PTPNbr)
 {
     // Pull Down / Input mode
-    if (branch == BRANCH_A)
-    {
-        return (HAL_GPIO_ReadPin(PTPA_PORT, PTPA_PIN));
-    }
-    else if (branch == BRANCH_B)
-    {
-        return (HAL_GPIO_ReadPin(PTPB_PORT, PTPB_PIN));
-    }
-    return 0;
+    return (HAL_GPIO_ReadPin(PTP[PTPNbr].Port, PTP[PTPNbr].Pin));
 }
 /******************************************************************************
  * @brief Initialize CRC Process

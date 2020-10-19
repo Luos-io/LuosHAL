@@ -17,14 +17,6 @@
 #define LUOS_UUID ((uint32_t *)0x1FFF7590)
 #define MCUFREQ 170000000
 
-// list of all branches of your configuration.
-typedef enum
-{
-    BRANCH_A,
-    BRANCH_B,
-    NO_BRANCH // you have to keep this one at the last position
-} branch_t;
-
 #define PAGE_SIZE (uint32_t) FLASH_PAGE_SIZE
 #define ADDR_FLASH_BANK1 ((uint32_t)0x08000000)
 #define ADDR_FLASH_BANK2 ((uint32_t)0x08040000)
@@ -51,10 +43,10 @@ void LuosHAL_ComTxTimeout(void);
 uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size);
 void LuosHAL_SetTxLockDetecState(uint8_t Enable);
 uint8_t LuosHAL_GetTxLockState(void);
-void LuosHAL_SetPTPDefaultState(branch_t branch);
-void LuosHAL_SetPTPReverseState(branch_t branch);
-void LuosHAL_PushPTP(branch_t branch);
-uint8_t LuosHAL_GetPTPState(branch_t branch);
+void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr);
+void LuosHAL_SetPTPReverseState(uint8_t PTPNbr);
+void LuosHAL_PushPTP(uint8_t PTPNbr);
+uint8_t LuosHAL_GetPTPState(uint8_t PTPNbr);
 void LuosHAL_ComputeCRC(uint8_t *data, uint8_t *crc);
 void LuosHAL_FlashWriteLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data);
 void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data);
