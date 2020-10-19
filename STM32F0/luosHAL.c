@@ -59,6 +59,15 @@ void LuosHAL_Init(void)
 
     //Timeout Initialization
     LuosHAL_TimeoutInit();
+
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+     /*Configure GPIO pins : RxEN_Pin */
+     GPIO_InitStruct.Pin = GPIO_PIN_14;
+     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+     GPIO_InitStruct.Pull = GPIO_NOPULL;
+     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
 }
 /******************************************************************************
  * @brief Luos HAL general disable IRQ
@@ -499,27 +508,15 @@ static void LuosHAL_CRCInit(void)
     }
 }
 /******************************************************************************
- * @brief Reset CRC
- * @param pointer to crc value to reset
- * @return None
- ******************************************************************************/
-void LuosHAL_ResetCRC(uint8_t *crc)
-{
-    __HAL_CRC_DR_RESET(&hcrc);
-    uint16_t crc_init = 0xFFFF;
-    memcpy(crc,&crc_init,2);
-}
-/******************************************************************************
  * @brief Compute CRC
  * @param None
  * @return None
  ******************************************************************************/
-void LuosHAL_ComputeCRC(uint8_t *data, uint16_t size, uint8_t *crc)
+void LuosHAL_ComputeCRC(uint8_t *data, uint8_t *crc)
 {
-    uint16_t calc;
-    calc = (unsigned short)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, size);
-    crc[0] = (unsigned char)calc;
-    crc[1] = (unsigned char)(calc >> 8);
+    hcrc.Instance->INIT = *(uint16_t*)crc;
+    __HAL_CRC_DR_RESET(&hcrc);
+    *(uint16_t*)crc = (unsigned short)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, 1);
 }
 /******************************************************************************
  * @brief Flash Initialisation
@@ -594,5 +591,7 @@ void PINOUT_IRQHANDLER(uint16_t GPIO_Pin)
 }
 void LUOS_COM_IRQHANDLER()
 {
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
     LuosHAL_ComReceive();
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET);
 }
