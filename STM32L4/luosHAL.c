@@ -200,12 +200,12 @@ static inline void LuosHAL_ComReceive(void)
     if ((LL_USART_IsActiveFlag_RXNE(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RXNE(LUOS_COM) != RESET))
     {
         uint8_t data = LL_USART_ReceiveData8(LUOS_COM);
-        ctx.data_cb(&data); // send reception byte to state machine
+        ctx.rx.callback(&data); // send reception byte to state machine
     }
     // Check if a timeout on reception occure
     if ((LL_USART_IsActiveFlag_RTO(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RTO(LUOS_COM) != RESET))
     {
-        if (ctx.tx_lock)
+        if (ctx.tx.lock)
         {
             Recep_Timeout();
         }
@@ -225,18 +225,27 @@ static inline void LuosHAL_ComReceive(void)
  ******************************************************************************/
 uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
 {
-    for (unsigned short i = 0; i < size; i++)
+    if(ctx.tx.lock != false)
     {
-        while (!LL_USART_IsActiveFlag_TXE(LUOS_COM))
+        return 1;
+    }
+    else
+    {
+        ctx.tx.lock = true;
+        ctx.tx.data = data;
+        for (uint16_t i = 0; i < size; i++)
         {
+            while (!LL_USART_IsActiveFlag_TXE(LUOS_COM))
+            {
+            }
+            if (ctx.tx.collision)
+            {
+                // There is a collision
+                ctx.tx.collision = FALSE;
+                return 1;
+            }
+            LL_USART_TransmitData8(LUOS_COM, *(data + i));
         }
-        if (ctx.collision)
-        {
-            // There is a collision
-            ctx.collision = FALSE;
-            return 1;
-        }
-        LL_USART_TransmitData8(LUOS_COM, *(data + i));
     }
     return 0;
 }
