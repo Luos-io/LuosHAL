@@ -31,9 +31,9 @@ typedef struct
     uint16_t Pin;
     GPIO_TypeDef *Port;
     uint8_t IRQ;
-} branch_t;
+} Port_t;
 
-branch_t PTP[NBR_BRANCH];
+Port_t PTP[NBR_PORT];
 /*******************************************************************************
  * Function
  ******************************************************************************/
@@ -308,7 +308,7 @@ static void LuosHAL_GPIOInit(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(RX_EN_PORT, &GPIO_InitStruct);
 
-    /*Configure GPIO pins : RxEN_Pin */
+    /*Configure GPIO pins : TxEN_Pin */
     GPIO_InitStruct.Pin = TX_EN_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -347,7 +347,7 @@ static void LuosHAL_GPIOInit(void)
 
     //configure PTP
     LuosHAL_RegisterPTP();
-    for(uint8_t i = 0; i < NBR_BRANCH; i++)/*Configure GPIO pins : PTP_Pin */
+    for(uint8_t i = 0; i < NBR_PORT; i++)/*Configure GPIO pins : PTP_Pin */
     {
         GPIO_InitStruct.Pin = PTP[i].Pin;
         GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
@@ -376,28 +376,28 @@ static void LuosHAL_GPIOInit(void)
  ******************************************************************************/
 static void LuosHAL_RegisterPTP(void)
 {
-#if(NBR_BRANCH >= 1)
+#if(NBR_PORT >= 1)
     PTP[0].Pin = PTPA_PIN;
     PTP[0].Port = PTPA_PORT;
     PTP[0].IRQ = PTPA_IRQ;
     PTP[0].ID = 0x01;
 #endif
 
-#if(NBR_BRANCH >= 2)
+#if(NBR_PORT >= 2)
     PTP[1].Pin = PTPB_PIN;
     PTP[1].Port = PTPB_PORT;
     PTP[1].IRQ = PTPB_IRQ;
     PTP[1].ID = 0x02;
 #endif
 
-#if(NBR_BRANCH >= 3)
+#if(NBR_PORT >= 3)
     PTP[2].Pin = PTPC_PIN;
     PTP[2].Port = PTPC_PORT;
     PTP[2].IRQ = PTPC_IRQ;
     PTP[2].ID = 0x04;
 #endif
 
-#if(NBR_BRANCH >= 4)
+#if(NBR_PORT >= 4)
     PTP[3].Pin = PTPD_PIN;
     PTP[3].Port = PTPD_PORT;
     PTP[3].IRQ = PTPD_IRQ;
@@ -418,11 +418,11 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
     }
     else
     {
-        for(uint8_t i = 0; i < NBR_BRANCH; i++)
+        for(uint8_t i = 0; i < NBR_PORT; i++)
         {
             if (GPIO == PTP[i].Pin)
             {
-                Detec_PtpHandler(i);
+                PortMng_PtpHandler(i);
                 break;
             }
         }
