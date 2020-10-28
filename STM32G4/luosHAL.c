@@ -204,7 +204,7 @@ static inline void LuosHAL_ComReceive(void)
         uint8_t data = LL_USART_ReceiveData8(LUOS_COM);
         ctx.rx.callback(&data); // send reception byte to state machine
     }
-    if ((LL_USART_IsActiveFlag_RTO(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RTO(LUOS_COM) != RESET))
+    else if ((LL_USART_IsActiveFlag_RTO(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RTO(LUOS_COM) != RESET))
     {
         // Check if a timeout on reception occure
         if (ctx.tx.lock)
@@ -218,8 +218,10 @@ static inline void LuosHAL_ComReceive(void)
         LL_USART_ClearFlag_RTO(LUOS_COM);
         LL_USART_SetRxTimeout(LUOS_COM, TIMEOUT_VAL * (8 + 1 + 1));
     }
-
-    LUOS_COM->ICR = 0XFFFFFFFF;
+    else
+    {
+        LUOS_COM->ICR = 0XFFFFFFFF;
+    }
 }
 /******************************************************************************
  * @brief Process data transmit
@@ -228,7 +230,7 @@ static inline void LuosHAL_ComReceive(void)
  ******************************************************************************/
 uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
 {
-    if(ctx.tx.lock != false)
+    if (ctx.tx.lock != false)
     {
         return 1;
     }
@@ -357,7 +359,7 @@ static void LuosHAL_GPIOInit(void)
 
     //configure PTP
     LuosHAL_RegisterPTP();
-    for(uint8_t i = 0; i < NBR_PORT; i++)/*Configure GPIO pins : PTP_Pin */
+    for (uint8_t i = 0; i < NBR_PORT; i++) /*Configure GPIO pins : PTP_Pin */
     {
         GPIO_InitStruct.Pin = PTP[i].Pin;
         GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
@@ -386,28 +388,28 @@ static void LuosHAL_GPIOInit(void)
  ******************************************************************************/
 static void LuosHAL_RegisterPTP(void)
 {
-#if(NBR_PORT >= 1)
+#if (NBR_PORT >= 1)
     PTP[0].Pin = PTPA_PIN;
     PTP[0].Port = PTPA_PORT;
     PTP[0].IRQ = PTPA_IRQ;
     PTP[0].ID = 0x01;
 #endif
 
-#if(NBR_PORT >= 2)
+#if (NBR_PORT >= 2)
     PTP[1].Pin = PTPB_PIN;
     PTP[1].Port = PTPB_PORT;
     PTP[1].IRQ = PTPB_IRQ;
     PTP[1].ID = 0x02;
 #endif
 
-#if(NBR_PORT >= 3)
+#if (NBR_PORT >= 3)
     PTP[2].Pin = PTPC_PIN;
     PTP[2].Port = PTPC_PORT;
     PTP[2].IRQ = PTPC_IRQ;
     PTP[2].ID = 0x04;
 #endif
 
-#if(NBR_PORT >= 4)
+#if (NBR_PORT >= 4)
     PTP[3].Pin = PTPD_PIN;
     PTP[3].Port = PTPD_PORT;
     PTP[3].IRQ = PTPD_IRQ;
@@ -424,11 +426,10 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
     ////Process for Tx Lock Detec
     if (GPIO == TX_LOCK_DETECT_PIN)
     {
-
     }
     else
     {
-        for(uint8_t i = 0; i < NBR_PORT; i++)
+        for (uint8_t i = 0; i < NBR_PORT; i++)
         {
             if (GPIO == PTP[i].Pin)
             {
@@ -445,10 +446,10 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
  ******************************************************************************/
 void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr)
 {
+    __HAL_GPIO_EXTI_CLEAR_IT(PTP[PTPNbr].Pin);
     // Pull Down / IT mode / Rising Edge
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    __HAL_GPIO_EXTI_CLEAR_IT(PTP[PTPNbr].Pin);
     GPIO_InitStruct.Pin = PTP[PTPNbr].Pin;
     HAL_GPIO_Init(PTP[PTPNbr].Port, &GPIO_InitStruct);
 }
@@ -459,6 +460,7 @@ void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr)
  ******************************************************************************/
 void LuosHAL_SetPTPReverseState(uint8_t PTPNbr)
 {
+    __HAL_GPIO_EXTI_CLEAR_IT(PTP[PTPNbr].Pin);
     // Pull Down / IT mode / Falling Edge
     GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING; // reverse the detection edge
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
@@ -507,7 +509,8 @@ static void LuosHAL_CRCInit(void)
     hcrc.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
     if (HAL_CRC_Init(&hcrc) != HAL_OK)
     {
-        while (1);
+        while (1)
+            ;
     }
 }
 /******************************************************************************
@@ -517,9 +520,9 @@ static void LuosHAL_CRCInit(void)
  ******************************************************************************/
 void LuosHAL_ComputeCRC(uint8_t *data, uint8_t *crc)
 {
-    hcrc.Instance->INIT = *(uint16_t*)crc;
+    hcrc.Instance->INIT = *(uint16_t *)crc;
     __HAL_CRC_DR_RESET(&hcrc);
-    *(uint16_t*)crc = (unsigned short)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, 1);
+    *(uint16_t *)crc = (unsigned short)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, 1);
 }
 /******************************************************************************
  * @brief Flash Initialisation

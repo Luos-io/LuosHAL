@@ -205,7 +205,7 @@ static inline void LuosHAL_ComReceive(void)
         uint8_t data = LL_USART_ReceiveData8(LUOS_COM);
         ctx.rx.callback(&data); // send reception byte to state machine
     }
-    if ((LL_USART_IsActiveFlag_RTO(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RTO(LUOS_COM) != RESET))
+    else if ((LL_USART_IsActiveFlag_RTO(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RTO(LUOS_COM) != RESET))
     {
         // Check if a timeout on reception occure
         if (ctx.tx.lock)
@@ -219,7 +219,10 @@ static inline void LuosHAL_ComReceive(void)
         LL_USART_ClearFlag_RTO(LUOS_COM);
         LL_USART_SetRxTimeout(LUOS_COM, TIMEOUT_VAL * (8 + 1 + 1));
     }
-    LUOS_COM->ICR = 0XFFFFFFFF;
+    else
+    {
+        LUOS_COM->ICR = 0XFFFFFFFF;
+    }
 }
 /******************************************************************************
  * @brief Process data transmit
@@ -435,10 +438,10 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
  ******************************************************************************/
 void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr)
 {
+    __HAL_GPIO_EXTI_CLEAR_IT(PTP[PTPNbr].Pin);
     // Pull Down / IT mode / Rising Edge
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    __HAL_GPIO_EXTI_CLEAR_IT(PTP[PTPNbr].Pin);
     GPIO_InitStruct.Pin = PTP[PTPNbr].Pin;
     HAL_GPIO_Init(PTP[PTPNbr].Port, &GPIO_InitStruct);
 }
@@ -449,6 +452,7 @@ void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr)
  ******************************************************************************/
 void LuosHAL_SetPTPReverseState(uint8_t PTPNbr)
 {
+    __HAL_GPIO_EXTI_CLEAR_IT(PTP[PTPNbr].Pin);
     // Pull Down / IT mode / Falling Edge
     GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING; // reverse the detection edge
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
