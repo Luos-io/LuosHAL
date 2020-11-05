@@ -27,7 +27,6 @@ CRC_HandleTypeDef hcrc;
 
 typedef struct
 {
-    uint8_t ID;
     uint16_t Pin;
     GPIO_TypeDef *Port;
     uint8_t IRQ;
@@ -392,28 +391,24 @@ static void LuosHAL_RegisterPTP(void)
     PTP[0].Pin = PTPA_PIN;
     PTP[0].Port = PTPA_PORT;
     PTP[0].IRQ = PTPA_IRQ;
-    PTP[0].ID = 0x01;
 #endif
 
 #if (NBR_PORT >= 2)
     PTP[1].Pin = PTPB_PIN;
     PTP[1].Port = PTPB_PORT;
     PTP[1].IRQ = PTPB_IRQ;
-    PTP[1].ID = 0x02;
 #endif
 
 #if (NBR_PORT >= 3)
     PTP[2].Pin = PTPC_PIN;
     PTP[2].Port = PTPC_PORT;
     PTP[2].IRQ = PTPC_IRQ;
-    PTP[2].ID = 0x04;
 #endif
 
 #if (NBR_PORT >= 4)
     PTP[3].Pin = PTPD_PIN;
     PTP[3].Port = PTPD_PORT;
     PTP[3].IRQ = PTPD_IRQ;
-    PTP[3].ID = 0x08;
 #endif
 }
 /******************************************************************************
@@ -522,7 +517,7 @@ void LuosHAL_ComputeCRC(uint8_t *data, uint8_t *crc)
 {
     hcrc.Instance->INIT = *(uint16_t *)crc;
     __HAL_CRC_DR_RESET(&hcrc);
-    *(uint16_t *)crc = (unsigned short)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, 1);
+    *(uint16_t *)crc = (uint16_t)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, 1);
 }
 /******************************************************************************
  * @brief Flash Initialisation
