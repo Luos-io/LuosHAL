@@ -5,7 +5,7 @@
  * @author Luos
  * @version 0.0.0
  ******************************************************************************/
-#include "luosHAL.h"
+#include "luos_hal.h"
 
 #include <stdbool.h>
 #include <string.h>
