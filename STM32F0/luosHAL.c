@@ -198,7 +198,13 @@ void LuosHAL_ComTxTimeout(void)
  ******************************************************************************/
 static inline void LuosHAL_ComReceive(void)
 {
-    // check if we receive a data
+
+    if (LL_USART_IsActiveFlag_FE(LUOS_COM) != RESET)
+    {
+        LL_USART_ClearFlag_FE(LUOS_COM);
+        ctx.rx.status.rx_framing_error = true;
+    }
+
     if ((LL_USART_IsActiveFlag_RXNE(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RXNE(LUOS_COM) != RESET))
     {
         uint8_t data = LL_USART_ReceiveData8(LUOS_COM);
@@ -220,7 +226,7 @@ static inline void LuosHAL_ComReceive(void)
     }
     else
     {
-        LUOS_COM->ICR = 0XFFFFFFFF;
+        LUOS_COM->ICR = 0xFFFFFFFF;
     }
 }
 /******************************************************************************
