@@ -1,20 +1,20 @@
 /******************************************************************************
  * @file luosHAL
  * @brief Luos Hardware Abstration Layer. Describe Low layer fonction
- * @MCU Family STM32G4
+ * @MCU Family STM32L4
  * @author Luos
  * @version 0.0.0
  ******************************************************************************/
-#include "luosHAL.h"
+#include "luos_hal.h"
 
 #include <stdbool.h>
 #include <string.h>
 #include "reception.h"
 #include "context.h"
 
-//MCU dependencies this HAL is for family STM32G4 you can find
-//the HAL stm32cubeg4 on ST web site
-#include "stm32g4xx_ll_usart.h"
+//MCU dependencies this HAL is for family STM32l4 you can find
+//the HAL stm32cubel4 on ST web site
+#include "stm32l4xx_ll_usart.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -22,8 +22,8 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-CRC_HandleTypeDef hcrc;
 GPIO_InitTypeDef GPIO_InitStruct = {0};
+CRC_HandleTypeDef hcrc;
 
 typedef struct
 {
@@ -104,9 +104,8 @@ void LuosHAL_ComInit(uint32_t baudrate)
 
     LL_USART_InitTypeDef USART_InitStruct;
 
-    // Initialise USART3
+    // Initialise USART1
     LL_USART_Disable(LUOS_COM);
-    USART_InitStruct.PrescalerValue = LL_USART_PRESCALER_DIV1;
     USART_InitStruct.BaudRate = baudrate;
     USART_InitStruct.DataWidth = LL_USART_DATAWIDTH_8B;
     USART_InitStruct.StopBits = LL_USART_STOPBITS_1;
@@ -120,6 +119,7 @@ void LuosHAL_ComInit(uint32_t baudrate)
 
     // Enable Reception interrupt
     LL_USART_EnableIT_RXNE(LUOS_COM);
+
     HAL_NVIC_EnableIRQ(LUOS_COM_IRQ);
     HAL_NVIC_SetPriority(LUOS_COM_IRQ, 0, 1);
 }
@@ -197,7 +197,7 @@ void LuosHAL_ComTxTimeout(void)
  ******************************************************************************/
 static inline void LuosHAL_ComReceive(void)
 {
-	if (LL_USART_IsActiveFlag_FE(LUOS_COM) != RESET)
+    if (LL_USART_IsActiveFlag_FE(LUOS_COM) != RESET)
     {
         LL_USART_ClearFlag_FE(LUOS_COM);
         ctx.rx.status.rx_framing_error = true;
@@ -208,9 +208,9 @@ static inline void LuosHAL_ComReceive(void)
         uint8_t data = LL_USART_ReceiveData8(LUOS_COM);
         ctx.rx.callback(&data); // send reception byte to state machine
     }
+    // Check if a timeout on reception occure
     else if ((LL_USART_IsActiveFlag_RTO(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RTO(LUOS_COM) != RESET))
     {
-        // Check if a timeout on reception occure
         if (ctx.tx.lock)
         {
             Recep_Timeout();
@@ -267,7 +267,7 @@ void LuosHAL_SetTxLockDetecState(uint8_t Enable)
 {
 }
 /******************************************************************************
- * @brief get Lock Com transmit status
+ * @brief get Lock Com transmit status this is the HW that can generate lock TX
  * @param None
  * @return Lock status
  ******************************************************************************/
@@ -303,7 +303,7 @@ static void LuosHAL_GPIOInit(void)
     if ((COM_LVL_DOWN_PIN != DISABLE) || (COM_LVL_DOWN_PORT != DISABLE))
     {
         HAL_GPIO_Init(COM_LVL_DOWN_PORT, &GPIO_InitStruct);
-        HAL_GPIO_WritePin(COM_LVL_DOWN_PORT, COM_LVL_DOWN_PIN, GPIO_PIN_RESET); // Setup pull down pins
+        HAL_GPIO_WritePin(COM_LVL_DOWN_PORT, COM_LVL_DOWN_PIN, GPIO_PIN_RESET); // Setup pull down pin
     }
 
     /*Configure GPIO pin : COM_LVL_UP_PIN */
@@ -543,8 +543,7 @@ static void LuosHAL_FlashEraseLuosMemoryInfo(void)
     FLASH_EraseInitTypeDef s_eraseinit;
 
     s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
-    s_eraseinit.Banks = FLASH_BANK_2;
-    s_eraseinit.Page = FLASH_PAGE_NB - 1;
+    s_eraseinit.Page = NB_OF_PAGE - 1;
     s_eraseinit.NbPages = 1;
 
     // Erase Page

@@ -1,7 +1,7 @@
 /******************************************************************************
  * @file luosHAL
  * @brief Luos Hardware Abstration Layer. Describe Low layer fonction
- * @MCU Family STM32L4
+ * @MCU Family STM32FO
  * @author Luos
  * @version 0.0.0
  ******************************************************************************/
@@ -9,17 +9,14 @@
 #define _LUOSHAL_H_
 
 #include <stdint.h>
-#include <luosHAL_Config.h>
+#include <luos_hal_config.h>
 
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-#define LUOS_UUID ((uint32_t *)0x1FFF7590)
-#define MCUFREQ 170000000
+#define LUOS_UUID ((uint32_t *)0x1FFFF7AC)
+#define MCUFREQ 48000000
 
-#define NB_OF_PAGE	64
-#define ADDR_FLASH_BANK1 ((uint32_t)0x08000000)
-#define ADDR_FLASH_BANK2 ((uint32_t)0x08040000)
 #define ADDRESS_ALIASES_FLASH ADDRESS_LAST_PAGE_FLASH
 #define ADDRESS_BOOT_FLAG_FLASH (ADDRESS_LAST_PAGE_FLASH + PAGE_SIZE) - 4
 
