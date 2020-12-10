@@ -56,12 +56,6 @@ static void LuosHAL_RegisterPTP(void);
  ******************************************************************************/
 void LuosHAL_Init(void)
 {
-    PORT_REGS->GROUP[1].PORT_PINCFG[0] = PORT_PINCFG_RESETVALUE;
-    PORT_REGS->GROUP[1].PORT_PINCFG[0] |= PORT_PINCFG_INEN_Msk; //enable input 
-    PORT_REGS->GROUP[1].PORT_PINCFG[0] |= PORT_PINCFG_PULLEN_Msk; //enable input 
-    PORT_REGS->GROUP[1].PORT_PINCFG[0] |= PORT_PINCFG_DRVSTR_Msk; //enable input 
-    PORT_REGS->GROUP[1].PORT_OUTSET = (1 << 0); //set output high
-    
     //Systick Initialization
     LuosHAL_SystickInit();
     
@@ -79,10 +73,6 @@ void LuosHAL_Init(void)
 
     //Timeout Initialization
     LuosHAL_TimeoutInit();
-    
-
-    PORT_REGS->GROUP[0].PORT_DIRSET = (1 << 10); //Output
-    PORT_REGS->GROUP[0].PORT_DIRSET = (1 << 20); //Output
 }
 /******************************************************************************
  * @brief Luos HAL general disable IRQ
@@ -679,16 +669,12 @@ void PINOUT_IRQHANDLER()
 }
 void LUOS_COM_IRQHANDLER()
 {
-    PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 10); //set output high
     LuosHAL_ComReceive();
-    PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 10); //set output high
 }
 
 void LUOS_TIMER_IRQHANDLER()
 {
-    PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 20); //set output high
     LuosHAL_ComTimeout();
-    PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 20); //set output high
 }
 
 

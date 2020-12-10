@@ -104,7 +104,7 @@
 #endif
 
 #ifndef COM_RX_PIN
-#define COM_RX_PIN                  5
+#define COM_RX_PIN                  5 //this pin should pin pull up to vcc if no internal pull up
 #endif
 #ifndef COM_RX_PORT
 #define COM_RX_PORT                 0
