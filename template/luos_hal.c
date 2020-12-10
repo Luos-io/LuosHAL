@@ -25,15 +25,20 @@
 /*******************************************************************************
  * Function
  ******************************************************************************/
+static void LuosHAL_SystickInit(void);
 static void LuosHAL_FlashInit(void);
 static void LuosHAL_CRCInit(void);
 static void LuosHAL_TimeoutInit(void);
+static void LuosHAL_ResetTimeout(void);
+static inline void LuosHAL_ComTimeout(void);
 static void LuosHAL_GPIOInit(void);
 static void LuosHAL_FlashEraseLuosMemoryInfo(void);
-static inline LuosHAL_ComReceive(void);
-static inline LuosHAL_GPIOProcess(uint16_t GPIO);
+static inline void LuosHAL_ComReceive(void);
+static inline void LuosHAL_GPIOProcess(uint16_t GPIO);
+static void LuosHAL_RegisterPTP(void);
 
 /////////////////////////Luos Library Needed function///////////////////////////
+
 /******************************************************************************
  * @brief Luos HAL general initialisation
  * @param None
@@ -41,19 +46,22 @@ static inline LuosHAL_GPIOProcess(uint16_t GPIO);
  ******************************************************************************/
 void LuosHAL_Init(void)
 {
-    //IO Initialisation
+    //Systick Initialization
+    LuosHAL_SystickInit();
+
+    //IO Initialization
     LuosHAL_GPIOInit();
 
-    // Flash Initialisation
+    // Flash Initialization
     LuosHAL_FlashInit();
 
-    // CRC Initialisation
+    // CRC Initialization
     LuosHAL_CRCInit();
 
-    //Com Initialisation
+    //Com Initialization
     LuosHAL_ComInit(DEFAULTBAUDRATE);
 
-    //Timout Initialisation
+    //Timeout Initialization
     LuosHAL_TimeoutInit();
 }
 /******************************************************************************
@@ -65,10 +73,20 @@ void LuosHAL_SetIrqState(uint8_t Enable)
 {
     if (Enable == true)
     {
+        __enable_irq();
     }
     else
     {
+        __disable_irq();
     }
+}
+/******************************************************************************
+ * @brief Luos HAL general systick tick at 1ms initialize
+ * @param None
+ * @return tick Counter
+ ******************************************************************************/
+static void LuosHAL_SystickInit(void)
+{
 }
 /******************************************************************************
  * @brief Luos HAL general systick tick at 1ms
@@ -124,30 +142,6 @@ void LuosHAL_SetRxState(uint8_t Enable)
     }
 }
 /******************************************************************************
- * @brief Luos Timeout initialisation
- * @param None
- * @return None
- ******************************************************************************/
-static void LuosHAL_TimeoutInit(void)
-{
-}
-/******************************************************************************
- * @brief Luos Timeout for Rx communication
- * @param None
- * @return None
- ******************************************************************************/
-void LuosHAL_ComRxTimeout(void)
-{
-}
-/******************************************************************************
- * @brief Luos Timeout for Tx communication
- * @param None
- * @return None
- ******************************************************************************/
-void LuosHAL_ComTxTimeout(void)
-{
-}
-/******************************************************************************
  * @brief Process data receive
  * @param None
  * @return None
@@ -174,6 +168,14 @@ uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     return; //Fail or Pass
 }
 /******************************************************************************
+ * @brief Luos Tx communication complete
+ * @param None
+ * @return None
+ ******************************************************************************/
+void LuosHAL_ComTxComplete(void)
+{
+}
+/******************************************************************************
  * @brief set state of Txlock detection pin
  * @param None
  * @return Lock status
@@ -194,6 +196,30 @@ uint8_t LuosHAL_GetTxLockState(void)
     return result;
 }
 /******************************************************************************
+ * @brief Luos Timeout initialisation
+ * @param None
+ * @return None
+ ******************************************************************************/
+static void LuosHAL_TimeoutInit(void)
+{
+}
+/******************************************************************************
+ * @brief Luos Timeout for Rx communication
+ * @param None
+ * @return None
+ ******************************************************************************/
+static void LuosHAL_ResetTimeout(void)
+{
+}
+/******************************************************************************
+ * @brief Luos Timeout for Rx communication
+ * @param None
+ * @return None
+ ******************************************************************************/
+static inline void LuosHAL_ComTimeout(void)
+{
+}
+/******************************************************************************
  * @brief Initialisation GPIO
  * @param None
  * @return None
@@ -203,6 +229,25 @@ static void LuosHAL_GPIOInit(void)
     // Init Pin and set value for pinout com
 
     // Setup PTP lines
+}
+/******************************************************************************
+ * @brief Register PTP
+ * @param void
+ * @return None
+ ******************************************************************************/
+static void LuosHAL_RegisterPTP(void)
+{
+#if (NBR_PORT >= 1)
+#endif
+
+#if (NBR_PORT >= 2)
+#endif
+
+#if (NBR_PORT >= 3)
+#endif
+
+#if (NBR_PORT >= 4)
+#endif
 }
 /******************************************************************************
  * @brief callback for GPIO IT
@@ -320,6 +365,11 @@ void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data
 }
 
 /////////////////////////Special LuosHAL function///////////////////////////
+
+/*
+Your code
+*/
+
 void PINOUT_IRQHANDLER(uint16_t GPIO_Pin)
 {
     LuosHAL_GPIOProcess(GPIO_Pin);
@@ -328,6 +378,8 @@ void LUOS_COM_IRQHANDLER()
 {
     LuosHAL_ComReceive();
 }
-/*
-Your code
-*/
+void LUOS_TIMER_IRQHANDLER()
+{
+    LuosHAL_ComTimeout();
+}
+
