@@ -22,7 +22,9 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
+#ifdef STM32G4xx_HAL_CRC_H
 CRC_HandleTypeDef hcrc;
+#endif
 GPIO_InitTypeDef GPIO_InitStruct = {0};
 
 typedef struct
@@ -30,15 +32,18 @@ typedef struct
     uint16_t Pin;
     GPIO_TypeDef *Port;
     uint8_t IRQ;
-} branch_t;
+} Port_t;
 
-branch_t PTP[NBR_PORT];
+Port_t PTP[NBR_PORT];
 /*******************************************************************************
  * Function
  ******************************************************************************/
+static void LuosHAL_SystickInit(void);
 static void LuosHAL_FlashInit(void);
 static void LuosHAL_CRCInit(void);
 static void LuosHAL_TimeoutInit(void);
+static void LuosHAL_ResetTimeout(void);
+static inline void LuosHAL_ComTimeout(void);
 static void LuosHAL_GPIOInit(void);
 static void LuosHAL_FlashEraseLuosMemoryInfo(void);
 static inline void LuosHAL_ComReceive(void);
@@ -46,6 +51,7 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO);
 static void LuosHAL_RegisterPTP(void);
 
 /////////////////////////Luos Library Needed function///////////////////////////
+
 /******************************************************************************
  * @brief Luos HAL general initialisation
  * @param None
@@ -53,6 +59,9 @@ static void LuosHAL_RegisterPTP(void);
  ******************************************************************************/
 void LuosHAL_Init(void)
 {
+    //Systick Initialization
+    LuosHAL_SystickInit();
+
     //IO Initialization
     LuosHAL_GPIOInit();
 
@@ -85,6 +94,14 @@ void LuosHAL_SetIrqState(uint8_t Enable)
     }
 }
 /******************************************************************************
+ * @brief Luos HAL general systick tick at 1ms initialize
+ * @param None
+ * @return tick Counter
+ ******************************************************************************/
+static void LuosHAL_SystickInit(void)
+{
+}
+/******************************************************************************
  * @brief Luos HAL general systick tick at 1ms
  * @param None
  * @return tick Counter
@@ -98,7 +115,7 @@ uint32_t LuosHAL_GetSystick(void)
  * @param Select a baudrate for the Com
  * @return none
  ******************************************************************************/
-void LuosHAL_ComInit(uint32_t baudrate)
+void LuosHAL_ComInit(uint32_t Baudrate)
 {
     LUOS_COM_CLOCK_ENABLE();
 
@@ -107,7 +124,7 @@ void LuosHAL_ComInit(uint32_t baudrate)
     // Initialise USART3
     LL_USART_Disable(LUOS_COM);
     USART_InitStruct.PrescalerValue = LL_USART_PRESCALER_DIV1;
-    USART_InitStruct.BaudRate = baudrate;
+    USART_InitStruct.BaudRate = Baudrate;
     USART_InitStruct.DataWidth = LL_USART_DATAWIDTH_8B;
     USART_InitStruct.StopBits = LL_USART_STOPBITS_1;
     USART_InitStruct.Parity = LL_USART_PARITY_NONE;
@@ -120,6 +137,7 @@ void LuosHAL_ComInit(uint32_t baudrate)
 
     // Enable Reception interrupt
     LL_USART_EnableIT_RXNE(LUOS_COM);
+
     HAL_NVIC_EnableIRQ(LUOS_COM_IRQ);
     HAL_NVIC_SetPriority(LUOS_COM_IRQ, 0, 1);
 }
@@ -160,49 +178,19 @@ void LuosHAL_SetRxState(uint8_t Enable)
     }
 }
 /******************************************************************************
- * @brief Luos Timeout initialisation
- * @param None
- * @return None
- ******************************************************************************/
-static void LuosHAL_TimeoutInit(void)
-{
-    // Enable Reception timeout interrupt
-    // the timeout expressed in nb of bits duration
-    LL_USART_EnableRxTimeout(LUOS_COM);
-    LL_USART_EnableIT_RTO(LUOS_COM);
-    LL_USART_SetRxTimeout(LUOS_COM, TIMEOUT_VAL * (8 + 1 + 1));
-}
-/******************************************************************************
- * @brief Luos Timeout for Rx communication
- * @param None
- * @return None
- ******************************************************************************/
-void LuosHAL_ComRxTimeout(void)
-{
-}
-/******************************************************************************
- * @brief Luos Timeout for Tx communication
- * @param None
- * @return None
- ******************************************************************************/
-void LuosHAL_ComTxTimeout(void)
-{
-    while (!LL_USART_IsActiveFlag_TC(LUOS_COM))
-        ;
-}
-/******************************************************************************
  * @brief Process data receive
  * @param None
  * @return None
  ******************************************************************************/
 static inline void LuosHAL_ComReceive(void)
 {
-	if (LL_USART_IsActiveFlag_FE(LUOS_COM) != RESET)
+
+    if (LL_USART_IsActiveFlag_FE(LUOS_COM) != RESET)
     {
         LL_USART_ClearFlag_FE(LUOS_COM);
         ctx.rx.status.rx_framing_error = true;
     }
-    // check if we receive a data
+
     if ((LL_USART_IsActiveFlag_RXNE(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RXNE(LUOS_COM) != RESET))
     {
         uint8_t data = LL_USART_ReceiveData8(LUOS_COM);
@@ -224,7 +212,7 @@ static inline void LuosHAL_ComReceive(void)
     }
     else
     {
-        LUOS_COM->ICR = 0XFFFFFFFF;
+        LUOS_COM->ICR = 0xFFFFFFFF;
     }
 }
 /******************************************************************************
@@ -234,29 +222,30 @@ static inline void LuosHAL_ComReceive(void)
  ******************************************************************************/
 uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
 {
-    if (ctx.tx.lock != false)
+    for (uint16_t i = 0; i < size; i++)
     {
-        return 1;
-    }
-    else
-    {
-        ctx.tx.lock = true;
-        ctx.tx.data = data;
-        for (uint16_t i = 0; i < size; i++)
+        while (!LL_USART_IsActiveFlag_TXE(LUOS_COM))
         {
-            while (!LL_USART_IsActiveFlag_TXE(LUOS_COM))
-            {
-            }
-            if (ctx.tx.collision)
-            {
-                // There is a collision
-                ctx.tx.collision = FALSE;
-                return 1;
-            }
-            LL_USART_TransmitData8(LUOS_COM, *(data + i));
         }
+        if (ctx.tx.collision)
+        {
+            // There is a collision
+            ctx.tx.collision = FALSE;
+            return 1;
+        }
+        LL_USART_TransmitData8(LUOS_COM, *(data + i));
     }
     return 0;
+}
+/******************************************************************************
+ * @brief Luos Tx communication complete
+ * @param None
+ * @return None
+ ******************************************************************************/
+void LuosHAL_ComTxComplete(void)
+{
+    while (!LL_USART_IsActiveFlag_TC(LUOS_COM))
+        ;
 }
 /******************************************************************************
  * @brief set state of Txlock detection pin
@@ -267,7 +256,7 @@ void LuosHAL_SetTxLockDetecState(uint8_t Enable)
 {
 }
 /******************************************************************************
- * @brief get Lock Com transmit status
+ * @brief get Lock Com transmit status this is the HW that can generate lock TX
  * @param None
  * @return Lock status
  ******************************************************************************/
@@ -284,6 +273,35 @@ uint8_t LuosHAL_GetTxLockState(void)
         result = true;
     }
     return result;
+}
+/******************************************************************************
+ * @brief Luos Timeout initialisation
+ * @param None
+ * @return None
+ ******************************************************************************/
+static void LuosHAL_TimeoutInit(void)
+{
+    // Enable Reception timeout interrupt
+    // the timeout expressed in nb of bits duration
+    LL_USART_SetRxTimeout(LUOS_COM, TIMEOUT_VAL * (8 + 1 + 1));
+    LL_USART_EnableRxTimeout(LUOS_COM);
+    LL_USART_EnableIT_RTO(LUOS_COM);
+}
+/******************************************************************************
+ * @brief Luos Timeout for Rx communication
+ * @param None
+ * @return None
+ ******************************************************************************/
+static void LuosHAL_ResetTimeout(void)
+{
+}
+/******************************************************************************
+ * @brief Luos Timeout for Rx communication
+ * @param None
+ * @return None
+ ******************************************************************************/
+static inline void LuosHAL_ComTimeout(void)
+{
 }
 /******************************************************************************
  * @brief Initialisation GPIO
@@ -324,7 +342,7 @@ static void LuosHAL_GPIOInit(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(RX_EN_PORT, &GPIO_InitStruct);
 
-    /*Configure GPIO pins : RxEN_Pin */
+    /*Configure GPIO pins : TxEN_Pin */
     GPIO_InitStruct.Pin = TX_EN_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -498,6 +516,7 @@ uint8_t LuosHAL_GetPTPState(uint8_t PTPNbr)
  ******************************************************************************/
 static void LuosHAL_CRCInit(void)
 {
+#ifdef STM32G4xx_HAL_CRC_H
     __HAL_RCC_CRC_CLK_ENABLE();
     hcrc.Instance = CRC;
     hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_DISABLE;
@@ -512,6 +531,7 @@ static void LuosHAL_CRCInit(void)
         while (1)
             ;
     }
+#endif
 }
 /******************************************************************************
  * @brief Compute CRC
@@ -520,9 +540,24 @@ static void LuosHAL_CRCInit(void)
  ******************************************************************************/
 void LuosHAL_ComputeCRC(uint8_t *data, uint8_t *crc)
 {
+#ifdef STM32G4xx_HAL_CRC_H
     hcrc.Instance->INIT = *(uint16_t *)crc;
     __HAL_CRC_DR_RESET(&hcrc);
     *(uint16_t *)crc = (uint16_t)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, 1);
+#else
+    for (uint8_t i = 0; i < 1; ++i)
+    {
+        uint16_t dbyte = data[i];
+        *(uint16_t *)crc ^= dbyte << 8;
+        for (uint8_t j = 0; j < 8; ++j)
+        {
+            uint16_t mix = *(uint16_t *)crc & 0x8000;
+            *(uint16_t *)crc = (*(uint16_t *)crc << 1);
+            if (mix)
+                *(uint16_t *)crc = *(uint16_t *)crc ^ 0x0007;
+        }
+    }
+#endif
 }
 /******************************************************************************
  * @brief Flash Initialisation

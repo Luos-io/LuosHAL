@@ -1,18 +1,25 @@
-#ifndef _HAL_H_
-#define _HAL_H_
+/******************************************************************************
+ * @file luosHAL
+ * @brief Luos Hardware Abstration Layer. Describe Low layer fonction
+ * @MCU Family STM32FO
+ * @author Luos
+ * @version 0.0.0
+ ******************************************************************************/
+#ifndef _LUOSHAL_H_
+#define _LUOSHAL_H_
 
-#include <main.h>
+#include <stdint.h>
+#include <luos_hal_Config.h>
 
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-// list of all branches of your configuration.
-typedef enum
-{
-    BRANCH_A,
-    BRANCH_B,
-    NO_BRANCH // you have to keep this one at the last position
-} branch_t;
+#define LUOS_UUID ((uint32_t *)0x1FFFF7AC)
+#define MCUFREQ 48000000
+#define TIMER_COUNTER 962 //20us = 1/MCUFREQ * TIMER_COUNTER
+
+#define ADDRESS_ALIASES_FLASH       ADDRESS_LAST_PAGE_FLASH
+#define ADDRESS_BOOT_FLAG_FLASH     (ADDRESS_LAST_PAGE_FLASH + PAGE_SIZE) - 4
 
 /*******************************************************************************
  * Variables
@@ -21,69 +28,22 @@ typedef enum
 /*******************************************************************************
  * Function
  ******************************************************************************/
-#define LUOS_UUID ((uint32_t *)0x1FFFF7AC)
+void LuosHAL_Init(void);
+void LuosHAL_SetIrqState(uint8_t Enable);
+uint32_t LuosHAL_GetSystick(void);
+void LuosHAL_ComInit(uint32_t Baudrate);
+void LuosHAL_SetTxState(uint8_t Enable);
+void LuosHAL_SetRxState(uint8_t Enable);
+uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size);
+void LuosHAL_SetTxLockDetecState(uint8_t Enable);
+uint8_t LuosHAL_GetTxLockState(void);
+void LuosHAL_ComTxComplete(void);
+void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr);
+void LuosHAL_SetPTPReverseState(uint8_t PTPNbr);
+void LuosHAL_PushPTP(uint8_t PTPNbr);
+uint8_t LuosHAL_GetPTPState(uint8_t PTPNbr);
+void LuosHAL_ComputeCRC(uint8_t *data, uint8_t *crc);
+void LuosHAL_FlashWriteLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data);
+void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data);
 
-#define MCUFREQ 48000000
-
-#define PAGE_SIZE (uint32_t) FLASH_PAGE_SIZE
-#define ERASE_SIZE (uint32_t) NVMCTRL_FLASH_ROWSIZE
-#define ADDRESS_ALIASES_FLASH (FLASH_ADDR + FLASH_SIZE - (16 * FLASH_PAGE_SIZE))
-#define ADDRESS_BOOT_FLAG_FLASH (FLASH_ADDR + FLASH_SIZE) - 4
-
-#define ROBUS_POWER_SENSOR_Pin GPIO_PIN_2
-#define ROBUS_POWER_SENSOR_GPIO_Port GPIOA
-#define LED_Pin GPIO_PIN_3
-#define LED_GPIO_Port GPIOA
-
-#define RS485_LVL_DOWN_Pin GPIO_PIN_5
-#define RS485_LVL_DOWN_GPIO_Port GPIOA
-#define RS485_LVL_UP_Pin GPIO_PIN_6
-#define RS485_LVL_UP_GPIO_Port GPIOA
-#define BTN_Pin GPIO_PIN_0
-#define BTN_GPIO_Port GPIOB
-#define ROBUS_PTPB_Pin GPIO_PIN_13
-#define ROBUS_PTPB_GPIO_Port GPIOB
-#define ROBUS_RE_Pin GPIO_PIN_14
-#define ROBUS_RE_GPIO_Port GPIOB
-#define ROBUS_DE_Pin GPIO_PIN_15
-#define ROBUS_DE_GPIO_Port GPIOB
-#define ROBUS_PTPA_Pin GPIO_PIN_8
-#define ROBUS_PTPA_GPIO_Port GPIOA
-#define ROBUS_TX_Pin GPIO_PIN_9
-#define ROBUS_TX_GPIO_Port GPIOA
-#define ROBUS_RX_Pin GPIO_PIN_10
-#define ROBUS_RX_GPIO_Port GPIOA
-
-#define ROBUS_TX_DETECT_Pin GPIO_PIN_11
-#define ROBUS_TX_DETECT_Port GPIOA
-
-void crc(unsigned char *data, unsigned short size, unsigned char *crc);
-void LuosHAL_init(void);
-void set_baudrate(unsigned int baudrate);
-unsigned char hal_transmit(unsigned char *data, unsigned short size);
-void send_poke(branch_t branch);
-void hal_delay_ms(int factor);
-void hal_disable_irq(void);
-void hal_enable_irq(void);
-void hal_disable_tx(void);
-void hal_disable_rx(void);
-void hal_enable_tx(void);
-void hal_enable_rx(void);
-void hal_wait_transmit_end(void);
-void hal_disable_irq(void);
-void hal_enable_irq(void);
-void HAL_LockTx(uint8_t lock);
-void set_PTP(branch_t branch);
-void reset_PTP(branch_t branch);
-unsigned char get_PTP(branch_t branch);
-void reverse_detection(branch_t branch);
-char HAL_is_tx_lock(void);
-void HAL_LockTx(uint8_t lock);
-void node_disable_irq(void);
-void node_enable_irq(void);
-uint32_t node_get_systick(void);
-
-void write_alias(unsigned short local_id, char *alias);
-char read_alias(unsigned short local_id, char *alias);
-
-#endif /* _HAL_H_ */
+#endif /* _LUOSHAL_H_ */
