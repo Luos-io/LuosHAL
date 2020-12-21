@@ -595,15 +595,18 @@ static void LuosHAL_FlashEraseLuosMemoryInfo(void)
 void LuosHAL_FlashWriteLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data)
 {
     // Before writing we have to erase the entire page
-    // to do that we have to backup current falues by copying it into RAM
+    // to do that we have to backup current values by copying it into RAM
+    uint32_t mask = 0xFFFFFFFFU ^ (PAGE_SIZE-1);
+    uint32_t page_addr = addr & mask; // find the first address of the page
+
     uint8_t page_backup[PAGE_SIZE];
-    memcpy(page_backup, (void *)ADDRESS_ALIASES_FLASH, PAGE_SIZE);
+    memcpy(page_backup, (void *)page_addr, PAGE_SIZE);
 
     // Now we can erase the page
     LuosHAL_FlashEraseLuosMemoryInfo();
 
     // Then add input data into backuped value on RAM
-    uint32_t RAMaddr = (addr - ADDRESS_ALIASES_FLASH);
+    uint32_t RAMaddr = (addr - page_addr);
     memcpy(&page_backup[RAMaddr], data, size);
 
     // and copy it into flash
@@ -612,7 +615,7 @@ void LuosHAL_FlashWriteLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *dat
     // ST hal flash program function write data by uint64_t raw data
     for (uint32_t i = 0; i < PAGE_SIZE; i += sizeof(uint64_t))
     {
-        while (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, i + ADDRESS_ALIASES_FLASH, *(uint64_t *)(&page_backup[i])) != HAL_OK)
+        while (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, i + page_addr, *(uint64_t *)(&page_backup[i])) != HAL_OK)
             ;
     }
     HAL_FLASH_Lock();
