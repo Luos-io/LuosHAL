@@ -45,7 +45,7 @@ static void LuosHAL_TimeoutInit(void);
 static void LuosHAL_ResetTimeout(void);
 static inline void LuosHAL_ComTimeout(void);
 static void LuosHAL_GPIOInit(void);
-static void LuosHAL_FlashEraseLuosMemoryInfo(void);
+static void LuosHAL_FlashEraseLuosMemoryInfo(uint32_t page_addr);
 static inline void LuosHAL_ComReceive(void);
 static inline void LuosHAL_GPIOProcess(uint16_t GPIO);
 static void LuosHAL_RegisterPTP(void);
@@ -571,13 +571,13 @@ static void LuosHAL_FlashInit(void)
  * @param None
  * @return None
  ******************************************************************************/
-static void LuosHAL_FlashEraseLuosMemoryInfo(void)
+static void LuosHAL_FlashEraseLuosMemoryInfo(uint32_t page_addr)
 {
     uint32_t page_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
 
     s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
-    s_eraseinit.PageAddress = ADDRESS_LAST_PAGE_FLASH;
+    s_eraseinit.PageAddress = page_addr;
     s_eraseinit.NbPages = 1;
 
     // Erase Page
@@ -601,7 +601,7 @@ void LuosHAL_FlashWriteLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *dat
     memcpy(page_backup, (void *)page_addr, PAGE_SIZE);
 
     // Now we can erase the page
-    LuosHAL_FlashEraseLuosMemoryInfo();
+    LuosHAL_FlashEraseLuosMemoryInfo(page_addr);
 
     // Then add input data into backuped value on RAM
     uint32_t RAMaddr = (addr - page_addr);
