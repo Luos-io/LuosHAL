@@ -13,6 +13,11 @@
 #include "stm32G4xx_hal.h"
 
 #define DISABLE 0x00
+
+#define MCUFREQ 170000000
+
+//Timer 1us step at 1Mhz usart
+#define TIMERPRESCALER   (MCUFREQ/DEFAULTBAUDRATE)/1//(freq MCU/freq timer)/divider timer clock source
 /*******************************************************************************
  * PINOUT CONFIG
  ******************************************************************************/
@@ -122,7 +127,21 @@
 #ifndef LUOS_COM_IRQHANDLER
 #define LUOS_COM_IRQHANDLER()       USART1_IRQHandler()
 #endif
-
+/*******************************************************************************
+ * COM TIMEOUT CONFIG
+ ******************************************************************************/
+#ifndef LUOS_TIMER_CLOCK_ENABLE
+#define LUOS_TIMER_CLOCK_ENABLE()    __HAL_RCC_TIM7_CLK_ENABLE()
+#endif
+#ifndef LUOS_TIMER
+#define LUOS_TIMER                  TIM7
+#endif
+#ifndef LUOS_TIMER_IRQ
+#define LUOS_TIMER_IRQ              TIM7_DAC_IRQn
+#endif
+#ifndef LUOS_TIMER_IRQHANDLER
+#define LUOS_TIMER_IRQHANDLER()     TIM7_DAC_IRQHandler()
+#endif
 /*******************************************************************************
  * FLASH CONFIG
  ******************************************************************************/
