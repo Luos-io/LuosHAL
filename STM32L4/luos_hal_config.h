@@ -13,7 +13,10 @@
 #include "stm32L4xx_hal.h"
 
 #define DISABLE 0x00
-#define DISABLE 0x00
+#define MCUFREQ 80000000
+
+//Timer 1us step at 1Mhz usart
+#define TIMERPRESCALER   (MCUFREQ/DEFAULTBAUDRATE)/1//(freq MCU/freq timer)/divider timer clock source
 /*******************************************************************************
  * PINOUT CONFIG
  ******************************************************************************/
@@ -26,23 +29,23 @@
 
 //PTP pin definition
 #ifndef PTPA_PIN
-#define PTPA_PIN                    GPIO_PIN_8
+#define PTPA_PIN                    GPIO_PIN_5
 #endif
 #ifndef PTPA_PORT
-#define PTPA_PORT                   GPIOA
+#define PTPA_PORT                   GPIOB
 #endif
 #ifndef PTPA_IRQ
 #define PTPA_IRQ                    EXTI9_5_IRQn
 #endif
 
 #ifndef PTPB_PIN
-#define PTPB_PIN                    GPIO_PIN_13
+#define PTPB_PIN                    GPIO_PIN_4
 #endif
 #ifndef PTPB_PORT
 #define PTPB_PORT                   GPIOB
 #endif
 #ifndef PTPB_IRQ
-#define PTPB_IRQ                    EXTI15_10_IRQn
+#define PTPB_IRQ                    EXTI4_IRQn
 #endif
 
 //COM pin definition
@@ -57,31 +60,31 @@
 #endif
 
 #ifndef RX_EN_PIN
-#define RX_EN_PIN                   GPIO_PIN_14
+#define RX_EN_PIN                   GPIO_PIN_7
 #endif
 #ifndef RX_EN_PORT
 #define RX_EN_PORT                  GPIOB
 #endif
 
 #ifndef TX_EN_PIN
-#define TX_EN_PIN                   GPIO_PIN_15
+#define TX_EN_PIN                   GPIO_PIN_6
 #endif
 #ifndef TX_EN_PORT
 #define TX_EN_PORT                  GPIOB
 #endif
 
 #ifndef COM_LVL_DOWN_PIN
-#define COM_LVL_DOWN_PIN            GPIO_PIN_5
+#define COM_LVL_DOWN_PIN            GPIO_PIN_12
 #endif
 #ifndef COM_LVL_DOWN_PORT
 #define COM_LVL_DOWN_PORT           GPIOA
 #endif
 
 #ifndef COM_LVL_UP_PIN
-#define COM_LVL_UP_PIN              GPIO_PIN_6
+#define COM_LVL_UP_PIN              GPIO_PIN_0
 #endif
 #ifndef COM_LVL_UP_PORT
-#define COM_LVL_UP_PORT             GPIOA
+#define COM_LVL_UP_PORT             GPIOB
 #endif
 
 #ifndef COM_TX_PIN
@@ -123,7 +126,21 @@
 #ifndef LUOS_COM_IRQHANDLER
 #define LUOS_COM_IRQHANDLER()       USART1_IRQHandler()
 #endif
-
+/*******************************************************************************
+ * COM TIMEOUT CONFIG
+ ******************************************************************************/
+#ifndef LUOS_TIMER_CLOCK_ENABLE
+#define LUOS_TIMER_CLOCK_ENABLE()    __HAL_RCC_TIM7_CLK_ENABLE()
+#endif
+#ifndef LUOS_TIMER
+#define LUOS_TIMER                  TIM7
+#endif
+#ifndef LUOS_TIMER_IRQ
+#define LUOS_TIMER_IRQ              TIM7_IRQn
+#endif
+#ifndef LUOS_TIMER_IRQHANDLER
+#define LUOS_TIMER_IRQHANDLER()     TIM7_IRQHandler()
+#endif
 /*******************************************************************************
  * FLASH CONFIG
  ******************************************************************************/

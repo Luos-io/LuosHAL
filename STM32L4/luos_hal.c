@@ -15,6 +15,7 @@
 //MCU dependencies this HAL is for family STM32l4 you can find
 //the HAL stm32cubel4 on ST web site
 #include "stm32l4xx_ll_usart.h"
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -26,6 +27,7 @@
 CRC_HandleTypeDef hcrc;
 #endif
 GPIO_InitTypeDef GPIO_InitStruct = {0};
+TIM_HandleTypeDef TimerHandle = {0};
 
 typedef struct
 {
@@ -150,10 +152,6 @@ void LuosHAL_SetTxState(uint8_t Enable)
     if (Enable == true)
     {
         HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_SET);
-        // Sometime the TX set is too slow and the driver switch in sleep mode...
-        HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_SET);
     }
     else
     {
@@ -169,10 +167,15 @@ void LuosHAL_SetRxState(uint8_t Enable)
 {
     if (Enable == true)
     {
+        LL_USART_ReceiveData8(LUOS_COM);//empty buffer
+        LUOS_COM->CR1 |= USART_CR1_RE;// Enable RX
+        LUOS_COM->CR1 |= USART_CR1_RXNEIE;//Enable RX IT
         HAL_GPIO_WritePin(RX_EN_PORT, RX_EN_PIN, GPIO_PIN_RESET);
     }
     else
     {
+        LUOS_COM->CR1 &= ~USART_CR1_RE;// Disable RX
+        LUOS_COM->CR1 &= ~USART_CR1_RXNEIE;// Disable RX IT
         HAL_GPIO_WritePin(RX_EN_PORT, RX_EN_PIN, GPIO_PIN_SET);
     }
 }
@@ -183,31 +186,17 @@ void LuosHAL_SetRxState(uint8_t Enable)
  ******************************************************************************/
 static inline void LuosHAL_ComReceive(void)
 {
-
-    if (LL_USART_IsActiveFlag_FE(LUOS_COM) != RESET)
-    {
-        LL_USART_ClearFlag_FE(LUOS_COM);
-        ctx.rx.status.rx_framing_error = true;
-    }
-
+    LuosHAL_ResetTimeout();
+    
     if ((LL_USART_IsActiveFlag_RXNE(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RXNE(LUOS_COM) != RESET))
     {
         uint8_t data = LL_USART_ReceiveData8(LUOS_COM);
         ctx.rx.callback(&data); // send reception byte to state machine
     }
-    else if ((LL_USART_IsActiveFlag_RTO(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RTO(LUOS_COM) != RESET))
+    else if (LL_USART_IsActiveFlag_FE(LUOS_COM) != RESET)
     {
-        // Check if a timeout on reception occure
-        if (ctx.tx.lock)
-        {
-            Recep_Timeout();
-        }
-        else
-        {
-            //ERROR
-        }
-        LL_USART_ClearFlag_RTO(LUOS_COM);
-        LL_USART_SetRxTimeout(LUOS_COM, TIMEOUT_VAL * (8 + 1 + 1));
+        LL_USART_ClearFlag_FE(LUOS_COM);
+        ctx.rx.status.rx_framing_error = true;
     }
     else
     {
@@ -223,6 +212,7 @@ uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
 {
     for (uint16_t i = 0; i < size; i++)
     {
+        ctx.tx.lock = true;
         while (!LL_USART_IsActiveFlag_TXE(LUOS_COM))
         {
         }
@@ -233,6 +223,7 @@ uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
             return 1;
         }
         LL_USART_TransmitData8(LUOS_COM, *(data + i));
+        LuosHAL_ResetTimeout();
     }
     return 0;
 }
@@ -244,7 +235,13 @@ uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
 void LuosHAL_ComTxComplete(void)
 {
     while (!LL_USART_IsActiveFlag_TC(LUOS_COM))
-        ;
+    {
+        if (ctx.tx.lock == false)
+        {
+            break;
+        }
+    }
+    LuosHAL_ResetTimeout();
 }
 /******************************************************************************
  * @brief set state of Txlock detection pin
@@ -262,15 +259,18 @@ void LuosHAL_SetTxLockDetecState(uint8_t Enable)
 uint8_t LuosHAL_GetTxLockState(void)
 {
     uint8_t result = false;
-    if (READ_BIT(LUOS_COM->ISR, USART_ISR_BUSY) == (USART_ISR_BUSY))
-    {
-        result = true;
-    }
-    else if ((HAL_GPIO_ReadPin(TX_LOCK_DETECT_PORT, TX_LOCK_DETECT_PIN) == 0) &&
+
+    if ((HAL_GPIO_ReadPin(TX_LOCK_DETECT_PORT, TX_LOCK_DETECT_PIN) == 0) &&
              ((TX_LOCK_DETECT_PIN != DISABLE) && (TX_LOCK_DETECT_PORT != DISABLE)))
     {
         result = true;
     }
+    #ifdef USART_ISR_BUSY
+    else if (READ_BIT(LUOS_COM->ISR, USART_ISR_BUSY) == (USART_ISR_BUSY))
+    {
+        result = true;
+    }
+    #endif
     return result;
 }
 /******************************************************************************
@@ -280,11 +280,23 @@ uint8_t LuosHAL_GetTxLockState(void)
  ******************************************************************************/
 static void LuosHAL_TimeoutInit(void)
 {
-    // Enable Reception timeout interrupt
-    // the timeout expressed in nb of bits duration
-    LL_USART_SetRxTimeout(LUOS_COM, TIMEOUT_VAL * (8 + 1 + 1));
-    LL_USART_EnableRxTimeout(LUOS_COM);
-    LL_USART_EnableIT_RTO(LUOS_COM);
+    //initialize clock
+    LUOS_TIMER_CLOCK_ENABLE();
+
+    TimerHandle.Instance = LUOS_TIMER;
+    TimerHandle.Init.Period            = TIMER_RELOAD_CNT;
+    TimerHandle.Init.Prescaler         = TIMERPRESCALER-1;
+    TimerHandle.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
+    TimerHandle.Init.CounterMode       = TIM_COUNTERMODE_UP;
+    TimerHandle.Init.RepetitionCounter = 0;
+    TimerHandle.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    if(HAL_TIM_Base_Init(&TimerHandle) != HAL_OK)
+    {
+        while(1);
+    }
+    HAL_NVIC_SetPriority(LUOS_TIMER_IRQ, 0, 2);
+    HAL_NVIC_EnableIRQ(LUOS_TIMER_IRQ);
+    HAL_TIM_Base_Start_IT(&TimerHandle);
 }
 /******************************************************************************
  * @brief Luos Timeout for Rx communication
@@ -293,6 +305,12 @@ static void LuosHAL_TimeoutInit(void)
  ******************************************************************************/
 static void LuosHAL_ResetTimeout(void)
 {
+    LUOS_TIMER->CR1 &= ~(TIM_CR1_CEN);//disable counter
+    LUOS_TIMER->CNT = 0;//reset counter
+    LUOS_TIMER->ARR = TIMER_RELOAD_CNT;//relaod value
+    __HAL_TIM_CLEAR_IT(&TimerHandle, TIM_IT_UPDATE);
+    NVIC_ClearPendingIRQ(LUOS_TIMER_IRQ);
+    LUOS_TIMER->CR1 |= TIM_CR1_CEN;//enable counter
 }
 /******************************************************************************
  * @brief Luos Timeout for Rx communication
@@ -301,6 +319,15 @@ static void LuosHAL_ResetTimeout(void)
  ******************************************************************************/
 static inline void LuosHAL_ComTimeout(void)
 {
+    if (__HAL_TIM_GET_FLAG(&TimerHandle, TIM_FLAG_UPDATE) != RESET)
+    {
+        __HAL_TIM_CLEAR_IT(&TimerHandle, TIM_IT_UPDATE);
+        LUOS_TIMER->CR1 &= ~(TIM_CR1_CEN);
+        if (ctx.tx.lock == true)
+        {
+            Recep_Timeout();
+        }
+    }
 }
 /******************************************************************************
  * @brief Initialisation GPIO
@@ -540,9 +567,11 @@ static void LuosHAL_CRCInit(void)
 void LuosHAL_ComputeCRC(uint8_t *data, uint8_t *crc)
 {
 #ifdef STM32L4xx_HAL_CRC_H
+    LuosHAL_SetIrqState(false);
     hcrc.Instance->INIT = *(uint16_t *)crc;
     __HAL_CRC_DR_RESET(&hcrc);
     *(uint16_t *)crc = (uint16_t)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, 1);
+    LuosHAL_SetIrqState(true);
 #else
     for (uint8_t i = 0; i < 1; ++i)
     {
@@ -633,4 +662,8 @@ void PINOUT_IRQHANDLER(uint16_t GPIO_Pin)
 void LUOS_COM_IRQHANDLER()
 {
     LuosHAL_ComReceive();
+}
+void LUOS_TIMER_IRQHANDLER()
+{
+    LuosHAL_ComTimeout();
 }
