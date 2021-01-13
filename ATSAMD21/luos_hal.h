@@ -1,7 +1,7 @@
 /******************************************************************************
  * @file luosHAL
  * @brief Luos Hardware Abstration Layer. Describe Low layer fonction
- * @MCU Family STM32FO
+ * @MCU Family ATSAMD21
  * @author Luos
  * @version 0.0.0
  ******************************************************************************/
@@ -15,11 +15,11 @@
  * Definitions
  ******************************************************************************/
 #define LUOS_UUID ((uint32_t *)0x1FFFF7AC)
-#define MCUFREQ 48000000
-#define TIMER_COUNTER 962 //20us = 1/MCUFREQ * TIMER_COUNTER
 
-#define ADDRESS_ALIASES_FLASH       ADDRESS_LAST_PAGE_FLASH
-#define ADDRESS_BOOT_FLAG_FLASH     (ADDRESS_LAST_PAGE_FLASH + PAGE_SIZE) - 4
+#define TIMER_RELOAD_CNT MCUFREQ * (20/DEFAULTBAUDRATE) //20us//2*10bits
+
+#define ADDRESS_ALIASES_FLASH ADDRESS_LAST_PAGE_FLASH
+#define ADDRESS_BOOT_FLAG_FLASH (ADDRESS_LAST_PAGE_FLASH + PAGE_SIZE) - 4
 
 /*******************************************************************************
  * Variables

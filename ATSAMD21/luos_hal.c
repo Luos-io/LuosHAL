@@ -213,6 +213,8 @@ void LuosHAL_SetRxState(uint8_t Enable)
 static inline void LuosHAL_ComReceive(void)
 {
     uint8_t data = 0;
+
+    LuosHAL_ResetTimeout();
     
     // check if we receive a data
     if((LUOS_COM->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_RXC_Msk) == SERCOM_USART_INT_INTFLAG_RXC_Msk)
@@ -237,8 +239,6 @@ static inline void LuosHAL_ComReceive(void)
         }
     }
     LUOS_COM->USART_INT.SERCOM_INTFLAG |= SERCOM_USART_EXT_INTFLAG_RXS(0);
-    // Check if a timeout on reception occure
-    LuosHAL_ResetTimeout();
 }
 /******************************************************************************
  * @brief Process data transmit
@@ -249,6 +249,7 @@ uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
 {
 	for (uint16_t i = 0; i < size; i++)
     {
+        ctx.tx.lock = true;
         while ((LUOS_COM->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) != SERCOM_USART_INT_INTFLAG_DRE_Msk);
         LUOS_COM->USART_INT.SERCOM_DATA = *(data + i);
         if (ctx.tx.collision)
@@ -332,7 +333,7 @@ static void LuosHAL_TimeoutInit(void)
 static void LuosHAL_ResetTimeout(void)
 {
     LUOS_TIMER->COUNT16.TC_INTFLAG |= TC_INTFLAG_OVF(0);
-    LUOS_TIMER->COUNT16.TC_COUNT = 0xFFFF - TIMER_COUNTER;
+    LUOS_TIMER->COUNT16.TC_COUNT = 0xFFFF - TIMER_RELOAD_CNT;
     LUOS_TIMER->COUNT16.TC_CTRLA |= TC_CTRLA_ENABLE_Msk;
     while((LUOS_TIMER->COUNT16.TC_STATUS & TC_STATUS_SYNCBUSY_Msk));
 }
