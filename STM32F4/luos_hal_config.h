@@ -51,13 +51,13 @@
 
 //COM pin definition
 #ifndef TX_LOCK_DETECT_PIN
-#define TX_LOCK_DETECT_PIN          DISABLE
+#define TX_LOCK_DETECT_PIN          GPIO_PIN_12
 #endif
 #ifndef TX_LOCK_DETECT_PORT
-#define TX_LOCK_DETECT_PORT         DISABLE
+#define TX_LOCK_DETECT_PORT         GPIOB
 #endif
 #ifndef TX_LOCK_DETECT_IRQ
-#define TX_LOCK_DETECT_IRQ         DISABLE
+#define TX_LOCK_DETECT_IRQ         EXTI15_10_IRQn
 #endif
 
 #ifndef RX_EN_PIN
