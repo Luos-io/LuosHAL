@@ -27,8 +27,7 @@ typedef struct
 {
     uint8_t Pin;
     uint8_t Port;
-    uint8_t Mux;
-    uint8_t Edge;
+    uint8_t Irq;
 } Port_t;
 
 Port_t PTP[NBR_PORT];
@@ -140,8 +139,8 @@ void LuosHAL_ComInit(uint32_t Baudrate)
     LUOS_COM->USART_INT.SERCOM_BAUD = SERCOM_USART_INT_BAUD_BAUD(baud);
 
     //Configures USART Clock Mode/ TXPO and RXPO/ Data Order/ Standby Mode/ Sampling rate/ IBON
-    LUOS_COM->USART_INT.SERCOM_CTRLA = SERCOM_USART_INT_CTRLA_MODE_USART_INT_CLK | SERCOM_USART_INT_CTRLA_RXPO(0x1) 
-                                        | SERCOM_USART_INT_CTRLA_TXPO(0x2) | SERCOM_USART_INT_CTRLA_DORD_Msk 
+    LUOS_COM->USART_INT.SERCOM_CTRLA = SERCOM_USART_INT_CTRLA_MODE_USART_INT_CLK | SERCOM_USART_INT_CTRLA_RXPO(COM_RX_POS) 
+                                        | SERCOM_USART_INT_CTRLA_TXPO(COM_TX_POS) | SERCOM_USART_INT_CTRLA_DORD_Msk 
                                         | SERCOM_USART_INT_CTRLA_IBON_Msk | SERCOM_USART_INT_CTRLA_FORM(0x0) 
                                         | SERCOM_USART_INT_CTRLA_SAMPR(0) ;
  
@@ -149,8 +148,6 @@ void LuosHAL_ComInit(uint32_t Baudrate)
     LUOS_COM->USART_INT.SERCOM_CTRLB = SERCOM_USART_INT_CTRLB_CHSIZE_8_BIT | SERCOM_USART_INT_CTRLB_SBMODE_1_BIT 
     									| SERCOM_USART_INT_CTRLB_RXEN_Msk | SERCOM_USART_INT_CTRLB_TXEN_Msk
                                         | SERCOM_USART_INT_CTRLB_SFDE_Msk ;
-    /* Wait for sync */
-    while(LUOS_COM->USART_INT.SERCOM_SYNCBUSY);
 
     /* Enable the UART after the configurations */
     LUOS_COM->USART_INT.SERCOM_CTRLA |= SERCOM_USART_INT_CTRLA_ENABLE_Msk;
@@ -264,12 +261,34 @@ uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     return 0;
 }
 /******************************************************************************
+ * @brief Luos Timeout for Tx communication
+ * @param None
+ * @return None
+ ******************************************************************************/
+void LuosHAL_ComTxComplete(void)
+{
+    while((LUOS_COM->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) != SERCOM_USART_INT_INTFLAG_TXC_Msk);
+    LuosHAL_ResetTimeout();
+}
+/******************************************************************************
  * @brief set state of Txlock detection pin
  * @param None
  * @return Lock status
  ******************************************************************************/
 void LuosHAL_SetTxLockDetecState(uint8_t Enable)
 {
+    if (TX_LOCK_DETECT_IRQ != DISABLE)
+    {
+        EIC_REGS->EIC_INTFLAG = (1 << TX_LOCK_DETECT_PIN); //clear IT flag
+        if (Enable == true)
+        {
+            EIC_REGS->EIC_INTENSET = (1 << TX_LOCK_DETECT_PIN);// enable IT
+        }
+        else
+        {
+            EIC_REGS->EIC_INTENCLR = (1 << TX_LOCK_DETECT_PIN);
+        }
+    }
 }
 /******************************************************************************
  * @brief get Lock Com transmit status this is the HW that can generate lock TX
@@ -284,23 +303,17 @@ uint8_t LuosHAL_GetTxLockState(void)
         LUOS_COM->USART_INT.SERCOM_INTFLAG |= SERCOM_USART_EXT_INTFLAG_RXS(0);
         result = true;
     }
-    return result;
-}
-/******************************************************************************
- * @brief Luos Timeout for Tx communication
- * @param None
- * @return None
- ******************************************************************************/
-void LuosHAL_ComTxComplete(void)
-{
-    while((LUOS_COM->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) != SERCOM_USART_INT_INTFLAG_TXC_Msk)
+    else
     {
-        if (ctx.tx.lock == false)
+        if ((TX_LOCK_DETECT_PIN != DISABLE) && (TX_LOCK_DETECT_PORT != DISABLE))
         {
-            break;
-        }
+            if(TX_LOCK_DETECT_IRQ == DISABLE)
+            {
+                result = ((PORT_REGS->GROUP[TX_LOCK_DETECT_PORT].PORT_IN >> TX_LOCK_DETECT_PIN) & 0x01);
+            }
+        } 
     }
-    LuosHAL_ResetTimeout();
+    return result;
 }
 /******************************************************************************
  * @brief Luos Timeout initialisation
@@ -360,6 +373,9 @@ static inline void LuosHAL_ComTimeout(void)
  ******************************************************************************/
 static void LuosHAL_GPIOInit(void)
 {
+    uint32_t Position = 0;
+    uint32_t Config = 0;
+
     //Activate Clock for PIN choosen in luosHAL
     PORT_CLOCK_ENABLE();
 
@@ -397,6 +413,25 @@ static void LuosHAL_GPIOInit(void)
 		PORT_REGS->GROUP[TX_LOCK_DETECT_PORT].PORT_PINCFG[TX_LOCK_DETECT_PIN] = PORT_PINCFG_RESETVALUE; //no pin mux / no input /  no pull / low streght
 		PORT_REGS->GROUP[TX_LOCK_DETECT_PORT].PORT_PINCFG[TX_LOCK_DETECT_PIN] |= PORT_PINCFG_INEN_Msk; //enable input 
     	PORT_REGS->GROUP[TX_LOCK_DETECT_PORT].PORT_OUTSET = (1 << TX_LOCK_DETECT_PIN); //pull up
+        if (TX_LOCK_DETECT_IRQ != DISABLE)
+        {
+            PORT_REGS->GROUP[TX_LOCK_DETECT_PORT].PORT_PMUX[TX_LOCK_DETECT_PIN>>1] |= (0<<(4*(TX_LOCK_DETECT_PIN%2)));
+            if(TX_LOCK_DETECT_IRQ < 8)
+            {
+                Config = 0;
+                Position = TX_LOCK_DETECT_IRQ << 2;
+                
+            }
+            else
+            {
+                Config = 1;
+                Position = (TX_LOCK_DETECT_IRQ - 8) << 2;
+            }
+        }
+        EIC_REGS->EIC_CONFIG[Config] &=~ (EIC_CONFIG_SENSE0_Msk << Position);//reset sense mode
+        EIC_REGS->EIC_CONFIG[Config] |= EIC_CONFIG_SENSE0_FALL_Val << Position;// Falling EDGE
+        EIC_REGS->EIC_INTFLAG = (1 << TX_LOCK_DETECT_IRQ); //clear IT flag
+        EIC_REGS->EIC_INTENSET = (1 << TX_LOCK_DETECT_IRQ);// enable IT
     }
 
     /*Configure GPIO pin : TxPin */
@@ -414,14 +449,8 @@ static void LuosHAL_GPIOInit(void)
     for (uint8_t i = 0; i < NBR_PORT; i++) /*Configure GPIO pins : PTP_Pin */
     {
         // Setup PTP lines //Mux all PTP to EIC
-        PORT_REGS->GROUP[PTP[NBR_PORT].Port].PORT_PMUX[PTP[NBR_PORT].Pin>>1] |= (PTP[NBR_PORT].Mux<<(4*(PTP[NBR_PORT].Pin%2)));
+        PORT_REGS->GROUP[PTP[NBR_PORT].Port].PORT_PMUX[PTP[NBR_PORT].Pin>>1] |= (0<<(4*(PTP[NBR_PORT].Pin%2)));
         LuosHAL_SetPTPDefaultState(i);
-    }
-
-    if (TX_LOCK_DETECT_IRQ != DISABLE)
-    {
-        //set Lock TX detection
-        LuosHAL_SetTxLockDetecState(true);
     }
     
     NVIC_SetPriority(EIC_IRQn, 3);
@@ -429,6 +458,8 @@ static void LuosHAL_GPIOInit(void)
     
     //Enable EIC interrupt
     EIC_REGS->EIC_CTRL |= EIC_CTRL_ENABLE_Msk;
+
+    //while(EIC_REGS->EIC_STATUS.EIC_SYNCBUSY);
     
 }
 /******************************************************************************
@@ -441,29 +472,25 @@ static void LuosHAL_RegisterPTP(void)
 #if (NBR_PORT >= 1)
     PTP[0].Pin = PTPA_PIN;
     PTP[0].Port = PTPA_PORT;
-    PTP[0].Mux = PTPA_MUX;
-    PTP[0].Edge = PTPA_EDGE;
+    PTP[0].Irq = PTPA_IRQ;
 #endif
 
 #if (NBR_PORT >= 2)
     PTP[1].Pin = PTPB_PIN;
     PTP[1].Port = PTPB_PORT;
-    PTP[1].Mux = PTPB_MUX;
-    PTP[1].Edge = PTPB_EDGE;
+    PTP[1].Irq = PTPB_IRQ;
 #endif
 
 #if (NBR_PORT >= 3)
     PTP[2].Pin = PTPC_PIN;
     PTP[2].Port = PTPC_PORT;
-    PTP[2].Mux = PTPC_MUX;
-    PTP[2].Edge = PTPC_EDGE;
+    PTP[2].Port = PTPC_PORT;
 #endif
 
 #if (NBR_PORT >= 4)
     PTP[3].Pin = PTPD_PIN;
     PTP[3].Port = PTPD_PORT;
-    PTP[3].Mux = PTPD_MUX;
-    PTP[3].Edge = PTPD_EDGE;
+    PTP[3].Port = PTPD_PORT;
 #endif
 }
 /******************************************************************************
@@ -476,6 +503,8 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
     ////Process for Tx Lock Detec
     if (GPIO == TX_LOCK_DETECT_PIN)
     {
+        ctx.tx.lock = true;
+        EIC_REGS->EIC_INTENCLR = (1 << TX_LOCK_DETECT_IRQ);
     }
     else
     {
@@ -496,14 +525,29 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
  ******************************************************************************/
 void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr)
 {
+    uint32_t Position = 0;
+    uint32_t Config = 0;
+
     // Pull Down / IT mode / Rising Edge
     PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] = PORT_PINCFG_RESETVALUE;  //no pin mux / no input /  no pull / low streght
     PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PMUXEN_Msk; //mux en 
     PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PULLEN_Msk; //pull en
     PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_OUTCLR = (1 << PTP[PTPNbr].Pin); //pull down
-    EIC_REGS->EIC_CONFIG[PTP[PTPNbr].Port] |= (0x01<<PTP[PTPNbr].Edge);// Rising EDGE
-    EIC_REGS->EIC_INTFLAG = (1 << PTP[PTPNbr].Pin); //clear IT flag
-    EIC_REGS->EIC_INTENSET = (1 << PTP[PTPNbr].Pin);// enable IT
+    if(PTP[PTPNbr].Irq < 8)
+    {
+        Config = 0;
+        Position = PTP[PTPNbr].Irq << 2;
+        
+    }
+    else
+    {
+        Config = 1;
+        Position = (PTP[PTPNbr].Irq - 8) << 2;
+    }
+    EIC_REGS->EIC_CONFIG[Config] &=~ (EIC_CONFIG_SENSE0_Msk << Position);//reset sense mode
+    EIC_REGS->EIC_CONFIG[Config] |= EIC_CONFIG_SENSE0_RISE_Val << Position;// Rising EDGE
+    EIC_REGS->EIC_INTFLAG = (1 << PTP[PTPNbr].Irq); //clear IT flag
+    EIC_REGS->EIC_INTENSET = (1 << PTP[PTPNbr].Irq);// enable IT
 }
 /******************************************************************************
  * @brief Set PTP for reverse detection on branch
@@ -512,14 +556,28 @@ void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr)
  ******************************************************************************/
 void LuosHAL_SetPTPReverseState(uint8_t PTPNbr)
 {
+    uint32_t Position = 0;
+    uint32_t Config = 0;
     // Pull Down / IT mode / Falling Edge
     PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] = PORT_PINCFG_RESETVALUE;  //no pin mux / no input /  no pull / low streght
     PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PMUXEN_Msk; //mux en 
     PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PULLEN_Msk; //pull en
     PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_OUTCLR = (1 << PTP[PTPNbr].Pin); //pull down
-    EIC_REGS->EIC_CONFIG[PTP[PTPNbr].Port] |= (0x02<<PTP[PTPNbr].Edge);// Falling EDGE
-    EIC_REGS->EIC_INTFLAG = (1 << PTP[PTPNbr].Pin); //clear IT flag
-    EIC_REGS->EIC_INTENSET = (1 << PTP[PTPNbr].Pin);// enable IT
+    if(PTP[PTPNbr].Irq < 8)
+    {
+        Config = 0;
+        Position = PTP[PTPNbr].Irq << 2;
+        
+    }
+    else
+    {
+        Config = 1;
+        Position = (PTP[PTPNbr].Irq - 8) << 2;
+    }
+    EIC_REGS->EIC_CONFIG[Config] &=~ (EIC_CONFIG_SENSE0_Msk << Position);//reset sense mode
+    EIC_REGS->EIC_CONFIG[Config] |= EIC_CONFIG_SENSE0_FALL_Val << Position;// Falling EDGE
+    EIC_REGS->EIC_INTFLAG = (1 << PTP[PTPNbr].Irq); //clear IT flag
+    EIC_REGS->EIC_INTENSET = (1 << PTP[PTPNbr].Irq);// enable IT
 }
 /******************************************************************************
  * @brief Set PTP line
@@ -529,8 +587,8 @@ void LuosHAL_SetPTPReverseState(uint8_t PTPNbr)
 void LuosHAL_PushPTP(uint8_t PTPNbr)
 {
     // Pull Down / Output mode
-    EIC_REGS->EIC_INTENCLR = (1 << PTP[PTPNbr].Pin);// disable IT
-    EIC_REGS->EIC_INTFLAG = (1 << PTP[PTPNbr].Pin); //clear IT flag
+    EIC_REGS->EIC_INTENCLR = (1 << PTP[PTPNbr].Irq);// disable IT
+    EIC_REGS->EIC_INTFLAG = (1 << PTP[PTPNbr].Irq); //clear IT flag
     PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] = PORT_PINCFG_RESETVALUE;  //no pin mux / no input /  no pull / low streght
     //PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PULLEN_Msk; //pull en
     PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_DIRSET = (1 << PTP[PTPNbr].Pin); //Output  
@@ -545,8 +603,8 @@ void LuosHAL_PushPTP(uint8_t PTPNbr)
 uint8_t LuosHAL_GetPTPState(uint8_t PTPNbr)
 {
     // Pull Down / Input mode
-    EIC_REGS->EIC_INTENCLR = (1 << PTP[PTPNbr].Pin);// disable IT
-    EIC_REGS->EIC_INTFLAG = (1 << PTP[PTPNbr].Pin); //clear IT flag
+    EIC_REGS->EIC_INTENCLR = (1 << PTP[PTPNbr].Irq);// disable IT
+    EIC_REGS->EIC_INTFLAG = (1 << PTP[PTPNbr].Irq); //clear IT flag
     PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] = PORT_PINCFG_RESETVALUE;  //no pin mux / no input /  no pull / low streght
     PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_INEN_Msk; //input
     PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PULLEN_Msk; //pull en

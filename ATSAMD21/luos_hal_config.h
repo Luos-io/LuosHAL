@@ -36,11 +36,8 @@
 #ifndef PTPA_PORT
 #define PTPA_PORT 1
 #endif
-#ifndef PTPA_MUX
-#define PTPA_MUX MUX_PB08A_EIC_EXTINT8
-#endif
-#ifndef PTPA_EDGE
-#define PTPA_EDGE EIC_CONFIG_SENSE0_Pos
+#ifndef PTPA_IRQ
+#define PTPA_IRQ  8 //see EXTINT
 #endif
 
 #ifndef PTPB_PIN
@@ -49,12 +46,10 @@
 #ifndef PTPB_PORT
 #define PTPB_PORT 1
 #endif
-#ifndef PTPB_MUX
-#define PTPB_MUX MUX_PB09A_EIC_EXTINT9
+#ifndef PTPB_IRQ
+#define PTPB_IRQ  9 //see EXTINT
 #endif
-#ifndef PTPB_EDGE
-#define PTPB_EDGE EIC_CONFIG_SENSE1_Pos
-#endif
+
 
 //COM pin definition
 #ifndef TX_LOCK_DETECT_PIN
@@ -104,6 +99,9 @@
 #ifndef COM_TX_AF
 #define COM_TX_AF MUX_PA04D_SERCOM0_PAD0
 #endif
+#ifndef COM_TX_POS
+#define COM_TX_POS 2 //PAD0
+#endif
 
 #ifndef COM_RX_PIN
 #define COM_RX_PIN 5 //this pin should pin pull up to vcc if no internal pull up
@@ -113,6 +111,9 @@
 #endif
 #ifndef COM_RX_AF
 #define COM_RX_AF MUX_PA05D_SERCOM0_PAD1
+#endif
+#ifndef COM_RX_POS
+#define COM_RX_POS 1 //PAD1
 #endif
 
 #ifndef PINOUT_IRQHANDLER
