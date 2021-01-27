@@ -18,7 +18,7 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-
+#define TIMER_RELOAD_CNT 20
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -27,6 +27,8 @@ CRC_HandleTypeDef hcrc;
 #endif
 GPIO_InitTypeDef GPIO_InitStruct = {0};
 TIM_HandleTypeDef TimerHandle = {0};
+
+uint32_t Timer_Prescaler = (MCUFREQ/DEFAULTBAUDRATE)/TIMERDIV;//(freq MCU/freq timer)/divider timer clock source
 
 typedef struct
 {
@@ -74,9 +76,6 @@ void LuosHAL_Init(void)
 
     //Com Initialization
     LuosHAL_ComInit(DEFAULTBAUDRATE);
-
-    //Timeout Initialization
-    LuosHAL_TimeoutInit();
 }
 /******************************************************************************
  * @brief Luos HAL general disable IRQ
@@ -140,6 +139,10 @@ void LuosHAL_ComInit(uint32_t Baudrate)
 
     HAL_NVIC_EnableIRQ(LUOS_COM_IRQ);
     HAL_NVIC_SetPriority(LUOS_COM_IRQ, 0, 1);
+
+    //Timeout Initialization
+    Timer_Prescaler = (MCUFREQ/Baudrate)/TIMERDIV;
+    LuosHAL_TimeoutInit();
 }
 /******************************************************************************
  * @brief Tx enable/disable relative to com
@@ -223,6 +226,7 @@ uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
         LL_USART_TransmitData8(LUOS_COM, *(data + i));
         LuosHAL_ResetTimeout();
     }
+    __HAL_TIM_DISABLE_IT(&TimerHandle, TIM_IT_UPDATE);
     return 0;
 }
 /******************************************************************************
@@ -267,6 +271,7 @@ uint8_t LuosHAL_GetTxLockState(void)
     #ifdef USART_ISR_BUSY
     if (READ_BIT(LUOS_COM->ISR, USART_ISR_BUSY) == (USART_ISR_BUSY))
     {
+        LuosHAL_ResetTimeout();
         result = true;
     }
     #else
@@ -275,6 +280,10 @@ uint8_t LuosHAL_GetTxLockState(void)
         if(TX_LOCK_DETECT_IRQ == DISABLE)
         {
             result = HAL_GPIO_ReadPin(TX_LOCK_DETECT_PORT, TX_LOCK_DETECT_PIN);
+            if(result == true)
+            {
+                LuosHAL_ResetTimeout();
+            }
         }
     }
     #endif
@@ -292,7 +301,7 @@ static void LuosHAL_TimeoutInit(void)
 
     TimerHandle.Instance = LUOS_TIMER;
     TimerHandle.Init.Period            = TIMER_RELOAD_CNT;
-    TimerHandle.Init.Prescaler         = TIMERPRESCALER-1;
+    TimerHandle.Init.Prescaler         = Timer_Prescaler-1;
     TimerHandle.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
     TimerHandle.Init.CounterMode       = TIM_COUNTERMODE_UP;
     TimerHandle.Init.RepetitionCounter = 0;
@@ -303,7 +312,6 @@ static void LuosHAL_TimeoutInit(void)
     }
     HAL_NVIC_SetPriority(LUOS_TIMER_IRQ, 0, 2);
     HAL_NVIC_EnableIRQ(LUOS_TIMER_IRQ);
-    HAL_TIM_Base_Start_IT(&TimerHandle);
 }
 /******************************************************************************
  * @brief Luos Timeout for Rx communication
@@ -313,10 +321,11 @@ static void LuosHAL_TimeoutInit(void)
 static void LuosHAL_ResetTimeout(void)
 {
     LUOS_TIMER->CR1 &= ~(TIM_CR1_CEN);//disable counter
+    NVIC_ClearPendingIRQ(LUOS_TIMER_IRQ);// clear IT pending
+    __HAL_TIM_CLEAR_IT(&TimerHandle, TIM_IT_UPDATE);// clear IT flag
     LUOS_TIMER->CNT = 0;//reset counter
     LUOS_TIMER->ARR = TIMER_RELOAD_CNT;//relaod value
-    __HAL_TIM_CLEAR_IT(&TimerHandle, TIM_IT_UPDATE);// clear IT flag
-    NVIC_ClearPendingIRQ(LUOS_TIMER_IRQ);// clear IT pending
+    __HAL_TIM_ENABLE_IT(&TimerHandle, TIM_IT_UPDATE);
     LUOS_TIMER->CR1 |= TIM_CR1_CEN;//enable counter
 }
 /******************************************************************************
