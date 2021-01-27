@@ -14,9 +14,8 @@
 
 #define DISABLE 0x00
 #define MCUFREQ 80000000
+#define TIMERDIV 1
 
-//Timer 1us step at 1Mhz usart
-#define TIMERPRESCALER   (MCUFREQ/DEFAULTBAUDRATE)/1//(freq MCU/freq timer)/divider timer clock source
 /*******************************************************************************
  * PINOUT CONFIG
  ******************************************************************************/
