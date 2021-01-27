@@ -23,6 +23,8 @@
  * Variables
  ******************************************************************************/
 volatile uint32_t tick;
+uint32_t Timer_Reload = ((MCUFREQ /DEFAULTBAUDRATE)*20); //20us//2*10bits
+
 typedef struct
 {
     uint8_t Pin;
@@ -69,9 +71,6 @@ void LuosHAL_Init(void)
 
     //Com Initialization
     LuosHAL_ComInit(DEFAULTBAUDRATE);
-
-    //Timeout Initialization
-    LuosHAL_TimeoutInit();
 }
 /******************************************************************************
  * @brief Luos HAL general disable IRQ
@@ -167,6 +166,9 @@ void LuosHAL_ComInit(uint32_t Baudrate)
     NVIC_SetPriority(LUOS_COM_IRQ, 3);
     NVIC_EnableIRQ(LUOS_COM_IRQ);
 
+    //Timeout Initialization
+    Timer_Reload = ((MCUFREQ /Baudrate)*20); //20us//2*10bits
+    LuosHAL_TimeoutInit();
 }
 /******************************************************************************
  * @brief Tx enable/disable relative to com
@@ -182,6 +184,7 @@ void LuosHAL_SetTxState(uint8_t Enable)
     else
     {
         PORT_REGS->GROUP[TX_EN_PORT].PORT_OUTCLR = (1 << TX_EN_PIN); //disable Tx
+        LUOS_COM->USART_INT.SERCOM_INTFLAG |= SERCOM_USART_EXT_INTFLAG_RXS(0);
     }
 }
 /******************************************************************************
@@ -193,6 +196,7 @@ void LuosHAL_SetRxState(uint8_t Enable)
 {
     if (Enable == true)
     {
+        LUOS_COM->USART_INT.SERCOM_DATA;
         LUOS_COM->USART_INT.SERCOM_CTRLB |= SERCOM_USART_INT_CTRLB_RXEN_Msk;
         PORT_REGS->GROUP[RX_EN_PORT].PORT_OUTCLR = (1 << RX_EN_PIN); //enable rx
     }
@@ -257,6 +261,7 @@ uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
         }
         LuosHAL_ResetTimeout();
     }
+    LUOS_TIMER->COUNT16.TC_INTENCLR = TC_INTFLAG_OVF_Msk;
     LUOS_COM->USART_INT.SERCOM_INTFLAG |= SERCOM_USART_EXT_INTFLAG_RXS(0);
     return 0;
 }
@@ -301,6 +306,7 @@ uint8_t LuosHAL_GetTxLockState(void)
     if ((LUOS_COM->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_RXS_Msk) == SERCOM_USART_INT_INTFLAG_RXS_Msk)
     {
         LUOS_COM->USART_INT.SERCOM_INTFLAG |= SERCOM_USART_EXT_INTFLAG_RXS(0);
+        LuosHAL_ResetTimeout();
         result = true;
     }
     else
@@ -333,7 +339,6 @@ static void LuosHAL_TimeoutInit(void)
     //LUOS_TIMER->COUNT16.TC_DBGCTRL = TC_DBGCTRL_DBGRUN_Msk;
     /* Clear all interrupt flags */
     LUOS_TIMER->COUNT16.TC_INTENSET = TC_INTFLAG_RESETVALUE;
-    LUOS_TIMER->COUNT16.TC_INTENSET = TC_INTFLAG_OVF_Msk;
     
     NVIC_SetPriority(LUOS_TIMER_IRQ, 3);
     NVIC_EnableIRQ(LUOS_TIMER_IRQ);
@@ -345,8 +350,10 @@ static void LuosHAL_TimeoutInit(void)
  ******************************************************************************/
 static void LuosHAL_ResetTimeout(void)
 {
+    NVIC_ClearPendingIRQ(LUOS_TIMER_IRQ);// clear IT pending
     LUOS_TIMER->COUNT16.TC_INTFLAG |= TC_INTFLAG_OVF(0);
-    LUOS_TIMER->COUNT16.TC_COUNT = 0xFFFF - TIMER_RELOAD_CNT;
+    LUOS_TIMER->COUNT16.TC_COUNT = 0xFFFF - Timer_Reload;
+    LUOS_TIMER->COUNT16.TC_INTENSET = TC_INTFLAG_OVF_Msk;
     LUOS_TIMER->COUNT16.TC_CTRLA |= TC_CTRLA_ENABLE_Msk;
     while((LUOS_TIMER->COUNT16.TC_STATUS & TC_STATUS_SYNCBUSY_Msk));
 }

@@ -16,8 +16,6 @@
  ******************************************************************************/
 #define LUOS_UUID ((uint32_t *)0x1FFFF7AC)
 
-#define TIMER_RELOAD_CNT ((MCUFREQ /DEFAULTBAUDRATE)*20) //20us//2*10bits
-
 #define ADDRESS_ALIASES_FLASH ADDRESS_LAST_PAGE_FLASH
 #define ADDRESS_BOOT_FLAG_FLASH (ADDRESS_LAST_PAGE_FLASH + PAGE_SIZE) - 4
 
