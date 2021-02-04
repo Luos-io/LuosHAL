@@ -10,6 +10,7 @@
 #ifndef _LUOSHAL_CONFIG_H_
 #define _LUOSHAL_CONFIG_H_
 
+#include <board_config.h>
 #include <Arduino.h>
 
 #define DISABLE 0x00
@@ -18,7 +19,6 @@
 /*******************************************************************************
  * PINOUT CONFIG
  ******************************************************************************/
-//GCLK_CLKCTRL_ID(GCLK_CLKCTRL_ID_EIC_Val) | GCLK_CLKCTRL_GEN(0x0) | GCLK_CLKCTRL_CLKEN;      
 #ifndef PORT_CLOCK_ENABLE
 #define PORT_CLOCK_ENABLE()                                                                               \
   do                                                                                                      \
@@ -31,23 +31,23 @@
 
 //PTP pin definition
 #ifndef PTPA_PIN
-#define PTPA_PIN 15
+#define PTPA_PIN g_APinDescription[5].ulPin
 #endif
 #ifndef PTPA_PORT
-#define PTPA_PORT 0
+#define PTPA_PORT g_APinDescription[5].ulPort
 #endif
 #ifndef PTPA_IRQ
-#define PTPA_IRQ  15 //see EXTINT
+#define PTPA_IRQ  g_APinDescription[5].ulExtInt //see EXTINT
 #endif
 
 #ifndef PTPB_PIN
-#define PTPB_PIN 20
+#define PTPB_PIN g_APinDescription[6].ulPin
 #endif
 #ifndef PTPB_PORT
-#define PTPB_PORT 0
+#define PTPB_PORT g_APinDescription[6].ulPort
 #endif
 #ifndef PTPB_IRQ
-#define PTPB_IRQ  4 //see EXTINT
+#define PTPB_IRQ  g_APinDescription[6].ulExtInt  //see EXTINT
 #endif
 
 //COM pin definition
@@ -62,17 +62,17 @@
 #endif
 
 #ifndef RX_EN_PIN
-#define RX_EN_PIN 14
+#define RX_EN_PIN g_APinDescription[2].ulPin
 #endif
 #ifndef RX_EN_PORT
-#define RX_EN_PORT 0
+#define RX_EN_PORT g_APinDescription[2].ulPort
 #endif
 
 #ifndef TX_EN_PIN
-#define TX_EN_PIN 9
+#define TX_EN_PIN g_APinDescription[3].ulPin
 #endif
 #ifndef TX_EN_PORT
-#define TX_EN_PORT 0
+#define TX_EN_PORT g_APinDescription[3].ulPort
 #endif
 
 #ifndef COM_LVL_DOWN_PIN
@@ -90,26 +90,26 @@
 #endif
 
 #ifndef COM_TX_PIN
-#define COM_TX_PIN 10
+#define COM_TX_PIN g_APinDescription[PIN_SERIAL1_TX].ulPin
 #endif
 #ifndef COM_TX_PORT
-#define COM_TX_PORT 0
+#define COM_TX_PORT g_APinDescription[PIN_SERIAL1_TX].ulPort
 #endif
 #ifndef COM_TX_AF
-#define COM_TX_AF MUX_PA10C_SERCOM0_PAD2
+#define COM_TX_AF g_APinDescription[PIN_SERIAL1_TX].ulPinType
 #endif
 #ifndef COM_TX_POS
 #define COM_TX_POS 1 //PAD2
 #endif
 
 #ifndef COM_RX_PIN
-#define COM_RX_PIN 11 //this pin should pin pull up to vcc if no internal pull up
+#define COM_RX_PIN g_APinDescription[PIN_SERIAL1_RX].ulPin //this pin should pin pull up to vcc if no internal pull up
 #endif
 #ifndef COM_RX_PORT
-#define COM_RX_PORT 0
+#define COM_RX_PORT g_APinDescription[PIN_SERIAL1_RX].ulPort
 #endif
 #ifndef COM_RX_AF
-#define COM_RX_AF MUX_PA11C_SERCOM0_PAD3
+#define COM_RX_AF g_APinDescription[PIN_SERIAL1_RX].ulPinType
 #endif
 #ifndef COM_RX_POS
 #define COM_RX_POS 3 //PAD3
@@ -118,8 +118,7 @@
 #ifndef PINOUT_IRQHANDLER
 #define PINOUT_IRQHANDLER() EIC_Handler()
 #endif
-
-//GCLK->CLKCTRL.reg |= GCLK_CLKCTRL_ID(GCLK_CLKCTRL_ID_SERCOM0_CORE_Val) | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN;     
+  
 /*******************************************************************************
  * COM CONFIG
  ******************************************************************************/
