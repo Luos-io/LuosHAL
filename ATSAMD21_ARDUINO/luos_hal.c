@@ -169,11 +169,19 @@ void LuosHAL_SetTxState(uint8_t Enable)
 {
     if (Enable == true)
     {
-		PORT->Group[TX_EN_PORT].OUTSET.reg = (1 << TX_EN_PIN); //enable Tx
+        PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg &= ~PORT_PINCFG_PULLEN; //Tx push pull
+        if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
+    	{
+			PORT->Group[TX_EN_PORT].OUTSET.reg = (1 << TX_EN_PIN); //enable Tx
+		}
     }
     else
     {
-        PORT->Group[TX_EN_PORT].OUTCLR.reg  = (1 << TX_EN_PIN); //disable Tx
+        PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg |= PORT_PINCFG_PULLEN; //Tx open drain
+        if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
+    	{
+        	PORT->Group[TX_EN_PORT].OUTCLR.reg  = (1 << TX_EN_PIN); //disable Tx
+        }
         LUOS_COM->USART.INTFLAG.bit.RXS = 1;//clear flag rx start
     }
 }
@@ -188,11 +196,17 @@ void LuosHAL_SetRxState(uint8_t Enable)
     {
         LUOS_COM->USART.DATA.reg;
         LUOS_COM->USART.CTRLB.reg  |= SERCOM_USART_CTRLB_RXEN;
-        PORT->Group[RX_EN_PORT].OUTCLR.reg = (1 << RX_EN_PIN); //enable rx
+        if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
+    	{
+        	PORT->Group[RX_EN_PORT].OUTCLR.reg = (1 << RX_EN_PIN); //enable rx
+        }
     }
     else
     {
-        PORT->Group[RX_EN_PORT].OUTSET.reg = (1 << RX_EN_PIN); //disable rx
+    	if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
+    	{
+        	PORT->Group[RX_EN_PORT].OUTSET.reg = (1 << RX_EN_PIN); //disable rx
+        }
         LUOS_COM->USART.CTRLB.reg &= ~SERCOM_USART_CTRLB_RXEN;
     }
 }
@@ -393,17 +407,23 @@ static void LuosHAL_GPIOInit(void)
     	PORT->Group[COM_LVL_DOWN_PORT].OUTCLR.reg = (1 << COM_LVL_DOWN_PIN); //set output low
     }
 
-    /*Configure GPIO pins : RxEN_Pin */ 
-    PORT->Group[RX_EN_PORT].PINCFG[RX_EN_PIN].reg = PORT_PINCFG_RESETVALUE; //no pin mux / no input /  no pull / low streght
-    PORT->Group[RX_EN_PORT].PINCFG[RX_EN_PIN].reg |= PORT_PINCFG_DRVSTR; //hight streght drive
-    PORT->Group[RX_EN_PORT].DIRSET.reg = (1 << RX_EN_PIN); //Output
-    PORT->Group[RX_EN_PORT].OUTCLR.reg = (1 << RX_EN_PIN); //disable Tx set output low
+    if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
+    {
+	    /*Configure GPIO pins : RxEN_Pin */ 
+	    PORT->Group[RX_EN_PORT].PINCFG[RX_EN_PIN].reg = PORT_PINCFG_RESETVALUE; //no pin mux / no input /  no pull / low streght
+	    PORT->Group[RX_EN_PORT].PINCFG[RX_EN_PIN].reg |= PORT_PINCFG_DRVSTR; //hight streght drive
+	    PORT->Group[RX_EN_PORT].DIRSET.reg = (1 << RX_EN_PIN); //Output
+	    PORT->Group[RX_EN_PORT].OUTCLR.reg = (1 << RX_EN_PIN); //disable Tx set output low
+	}
 
-    /*Configure GPIO pins : TxEN_Pin */
-    PORT->Group[TX_EN_PORT].PINCFG[TX_EN_PIN].reg = PORT_PINCFG_RESETVALUE; //no pin mux / no input /  no pull / low streght
-    PORT->Group[TX_EN_PORT].PINCFG[TX_EN_PIN].reg |= PORT_PINCFG_DRVSTR; //hight streght drive
-    PORT->Group[TX_EN_PORT].DIRSET.reg = (1 << TX_EN_PIN); //Output
-    PORT->Group[TX_EN_PORT].OUTCLR.reg = (1 << TX_EN_PIN); //disable Tx set output low
+    if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
+    {
+	    /*Configure GPIO pins : TxEN_Pin */
+	    PORT->Group[TX_EN_PORT].PINCFG[TX_EN_PIN].reg = PORT_PINCFG_RESETVALUE; //no pin mux / no input /  no pull / low streght
+	    PORT->Group[TX_EN_PORT].PINCFG[TX_EN_PIN].reg |= PORT_PINCFG_DRVSTR; //hight streght drive
+	    PORT->Group[TX_EN_PORT].DIRSET.reg = (1 << TX_EN_PIN); //Output
+	    PORT->Group[TX_EN_PORT].OUTCLR.reg = (1 << TX_EN_PIN); //disable Tx set output low
+	}
 
     /*Configure GPIO pins : TX_LOCK_DETECT_Pin */
     if ((TX_LOCK_DETECT_PIN != DISABLE) || (TX_LOCK_DETECT_PORT != DISABLE))
@@ -435,6 +455,7 @@ static void LuosHAL_GPIOInit(void)
     /*Configure GPIO pin : TxPin */
     PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg = PORT_PINCFG_RESETVALUE; //no pin mux / no input /  no pull / low streght
     PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg |= PORT_PINCFG_PMUXEN; //mux en 
+    PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg |= PORT_PINCFG_PULLEN; //Tx open drain
     PORT->Group[COM_TX_PORT].PMUX[COM_TX_PIN>>1].reg |= (COM_TX_AF<<(4*(COM_TX_PIN%2))); //mux to sercom
     
     /*Configure GPIO pin : RxPin */
