@@ -147,7 +147,7 @@
 #define PAGE_SIZE                   (uint32_t) 0x400
 #endif
 #ifndef ADDRESS_LAST_PAGE_FLASH
-#define ADDRESS_LAST_PAGE_FLASH     ((uint32_t)0x080FFFFF-PAGE_SIZE)
+#define ADDRESS_LAST_PAGE_FLASH     ((uint32_t)(FLASH_END-PAGE_SIZE))
 #endif
 
 #endif /* _LUOSHAL_CONFIG_H_ */
