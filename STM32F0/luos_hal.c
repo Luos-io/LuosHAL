@@ -153,11 +153,19 @@ void LuosHAL_SetTxState(uint8_t Enable)
 {
     if (Enable == true)
     {
-        HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_SET);
+    	COM_TX_PORT->OTYPER &= ~(uint32_t)(COM_TX_PIN);//put Tx in push pull
+    	if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
+    	{
+    		HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_SET);
+    	}
     }
     else
     {
-        HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_RESET);
+    	COM_TX_PORT->OTYPER |= (uint32_t)(COM_TX_PIN);//put Tx in Open drain
+    	if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
+    	{
+    		HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_RESET);
+    	}
     }
 }
 /******************************************************************************
@@ -172,13 +180,19 @@ void LuosHAL_SetRxState(uint8_t Enable)
         LUOS_COM->RQR |= USART_RQR_RXFRQ;//clear data register
         LUOS_COM->CR1 |= USART_CR1_RE;// Enable Rx com
         LUOS_COM->CR1 |= USART_CR1_RXNEIE;// Enable Rx IT
-        HAL_GPIO_WritePin(RX_EN_PORT, RX_EN_PIN, GPIO_PIN_RESET);
+        if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
+        {
+        	HAL_GPIO_WritePin(RX_EN_PORT, RX_EN_PIN, GPIO_PIN_RESET);
+        }
     }
     else
     {
         LUOS_COM->CR1 &= ~USART_CR1_RE;// disable Rx com
         LUOS_COM->CR1 &= ~USART_CR1_RXNEIE;// disable Rx IT
-        HAL_GPIO_WritePin(RX_EN_PORT, RX_EN_PIN, GPIO_PIN_SET);
+        if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
+        {
+        	HAL_GPIO_WritePin(RX_EN_PORT, RX_EN_PIN, GPIO_PIN_SET);
+        }
     }
 }
 /******************************************************************************
@@ -377,19 +391,25 @@ static void LuosHAL_GPIOInit(void)
         HAL_GPIO_WritePin(COM_LVL_UP_PORT, COM_LVL_UP_PIN, GPIO_PIN_SET); // Setup pull up pins
     }
 
-    /*Configure GPIO pins : RxEN_Pin */
-    GPIO_InitStruct.Pin = RX_EN_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(RX_EN_PORT, &GPIO_InitStruct);
+    if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
+    {
+		/*Configure GPIO pins : RxEN_Pin */
+		GPIO_InitStruct.Pin = RX_EN_PIN;
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+		HAL_GPIO_Init(RX_EN_PORT, &GPIO_InitStruct);
+    }
 
-    /*Configure GPIO pins : TxEN_Pin */
-    GPIO_InitStruct.Pin = TX_EN_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(TX_EN_PORT, &GPIO_InitStruct);
+    if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
+    {
+		/*Configure GPIO pins : TxEN_Pin */
+		GPIO_InitStruct.Pin = TX_EN_PIN;
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+		HAL_GPIO_Init(TX_EN_PORT, &GPIO_InitStruct);
+    }
 
     /*Configure GPIO pins : TX_LOCK_DETECT_Pin */
     GPIO_InitStruct.Pin = TX_LOCK_DETECT_PIN;
@@ -407,7 +427,7 @@ static void LuosHAL_GPIOInit(void)
 
     /*Configure GPIO pin : TxPin */
     GPIO_InitStruct.Pin = COM_TX_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = COM_TX_AF;

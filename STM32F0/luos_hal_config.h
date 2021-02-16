@@ -129,16 +129,16 @@
  * COM TIMEOUT CONFIG
  ******************************************************************************/
 #ifndef LUOS_TIMER_CLOCK_ENABLE
-#define LUOS_TIMER_CLOCK_ENABLE()    __HAL_RCC_TIM7_CLK_ENABLE()
+#define LUOS_TIMER_CLOCK_ENABLE()    __HAL_RCC_TIM6_CLK_ENABLE()
 #endif
 #ifndef LUOS_TIMER
-#define LUOS_TIMER                  TIM7
+#define LUOS_TIMER                  TIM6
 #endif
 #ifndef LUOS_TIMER_IRQ
-#define LUOS_TIMER_IRQ              TIM7_IRQn
+#define LUOS_TIMER_IRQ              TIM6_IRQn
 #endif
 #ifndef LUOS_TIMER_IRQHANDLER
-#define LUOS_TIMER_IRQHANDLER()     TIM7_IRQHandler()
+#define LUOS_TIMER_IRQHANDLER()     TIM6_DAC_IRQHandler()
 #endif
 /*******************************************************************************
  * FLASH CONFIG
@@ -147,7 +147,7 @@
 #define PAGE_SIZE                   (uint32_t) FLASH_PAGE_SIZE
 #endif
 #ifndef ADDRESS_LAST_PAGE_FLASH
-#define ADDRESS_LAST_PAGE_FLASH     ((uint32_t)0x0801F800)
+#define ADDRESS_LAST_PAGE_FLASH     ((uint32_t)(FLASH_BANK1_END - FLASH_PAGE_SIZE))
 #endif
 
 #endif /* _LUOSHAL_CONFIG_H_ */
