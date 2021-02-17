@@ -5,8 +5,8 @@
  * @author Luos
  * @version 0.0.0
  ******************************************************************************/
-#ifndef _HAL_H_
-#define _HAL_H_
+#ifndef _LUOSHAL_H_
+#define _LUOSHAL_H_
 
 #include <stdint.h>
 #include <luos_hal_config.h>

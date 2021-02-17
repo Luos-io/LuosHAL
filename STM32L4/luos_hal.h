@@ -15,7 +15,6 @@
  * Definitions
  ******************************************************************************/
 #define LUOS_UUID ((uint32_t *)0x1FFF7590)
-#define MCUFREQ 170000000
 
 #define NB_OF_PAGE 64
 #define ADDR_FLASH_BANK1 ((uint32_t)0x08000000)

@@ -15,7 +15,6 @@
  * Definitions
  ******************************************************************************/
 #define LUOS_UUID ((uint32_t *)0x1FFF7590)
-#define MCUFREQ 170000000
 
 #define PAGE_SIZE (uint32_t) FLASH_PAGE_SIZE
 #define ADDR_FLASH_BANK1 ((uint32_t)0x08000000)

@@ -1,7 +1,7 @@
 /******************************************************************************
  * @file luosHAL
  * @brief Luos Hardware Abstration Layer. Describe Low layer fonction
- * @MCU Family ATSAMD21
+ * @MCU Family STM32F4
  * @author Luos
  * @version 0.0.0
  ******************************************************************************/
@@ -14,7 +14,7 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-#define LUOS_UUID ((uint32_t *)0x1FFFF7AC)
+#define LUOS_UUID ((uint32_t *)0x1FFF7590)
 
 #define ADDRESS_ALIASES_FLASH ADDRESS_LAST_PAGE_FLASH
 #define ADDRESS_BOOT_FLAG_FLASH (ADDRESS_LAST_PAGE_FLASH + PAGE_SIZE) - 4

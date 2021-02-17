@@ -68,20 +68,6 @@
 #define TX_EN_PORT                  
 #endif
 
-#ifndef COM_LVL_DOWN_PIN
-#define COM_LVL_DOWN_PIN            
-#endif
-#ifndef COM_LVL_DOWN_PORT
-#define COM_LVL_DOWN_PORT           
-#endif
-
-#ifndef COM_LVL_UP_PIN
-#define COM_LVL_UP_PIN              
-#endif
-#ifndef COM_LVL_UP_PORT
-#define COM_LVL_UP_PORT             
-#endif
-
 #ifndef COM_TX_PIN
 #define COM_TX_PIN                  
 #endif
@@ -147,7 +133,7 @@
 #define PAGE_SIZE                   (uint32_t) FLASH_PAGE_SIZE
 #endif
 #ifndef ADDRESS_LAST_PAGE_FLASH
-#define ADDRESS_LAST_PAGE_FLASH     ((uint32_t)0x0801F800)
+#define ADDRESS_LAST_PAGE_FLASH     ((uint32_t)(FLASH_BANK1_END - FLASH_PAGE_SIZE))
 #endif
 
 #endif /* _LUOSHAL_CONFIG_H_ */

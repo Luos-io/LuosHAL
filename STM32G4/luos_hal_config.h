@@ -13,6 +13,10 @@
 #include "stm32G4xx_hal.h"
 
 #define DISABLE 0x00
+
+#define MCUFREQ 170000000
+#define TIMERDIV 1
+
 /*******************************************************************************
  * PINOUT CONFIG
  ******************************************************************************/
@@ -69,20 +73,6 @@
 #define TX_EN_PORT                  GPIOB
 #endif
 
-#ifndef COM_LVL_DOWN_PIN
-#define COM_LVL_DOWN_PIN            GPIO_PIN_5
-#endif
-#ifndef COM_LVL_DOWN_PORT
-#define COM_LVL_DOWN_PORT           GPIOA
-#endif
-
-#ifndef COM_LVL_UP_PIN
-#define COM_LVL_UP_PIN              GPIO_PIN_6
-#endif
-#ifndef COM_LVL_UP_PORT
-#define COM_LVL_UP_PORT             GPIOA
-#endif
-
 #ifndef COM_TX_PIN
 #define COM_TX_PIN                  GPIO_PIN_9
 #endif
@@ -122,7 +112,21 @@
 #ifndef LUOS_COM_IRQHANDLER
 #define LUOS_COM_IRQHANDLER()       USART1_IRQHandler()
 #endif
-
+/*******************************************************************************
+ * COM TIMEOUT CONFIG
+ ******************************************************************************/
+#ifndef LUOS_TIMER_CLOCK_ENABLE
+#define LUOS_TIMER_CLOCK_ENABLE()    __HAL_RCC_TIM7_CLK_ENABLE()
+#endif
+#ifndef LUOS_TIMER
+#define LUOS_TIMER                  TIM7
+#endif
+#ifndef LUOS_TIMER_IRQ
+#define LUOS_TIMER_IRQ              TIM7_DAC_IRQn
+#endif
+#ifndef LUOS_TIMER_IRQHANDLER
+#define LUOS_TIMER_IRQHANDLER()     TIM7_DAC_IRQHandler()
+#endif
 /*******************************************************************************
  * FLASH CONFIG
  ******************************************************************************/

@@ -1,7 +1,7 @@
 /******************************************************************************
  * @file luosHAL
  * @brief Luos Hardware Abstration Layer. Describe Low layer fonction
- * @MCU Family STM32G4
+ * @MCU Family STM32F4
  * @author Luos
  * @version 0.0.0
  ******************************************************************************/
@@ -12,10 +12,9 @@
 #include "reception.h"
 #include "context.h"
 
-//MCU dependencies this HAL is for family STM32l4 you can find
-//the HAL stm32cubeg4 on ST web site
-#include "stm32g4xx_ll_usart.h"
-
+//MCU dependencies this HAL is for family STM32F4 you can find
+//the HAL stm32cubeF4 on ST web site
+#include "stm32f4xx_ll_usart.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -24,12 +23,11 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-#ifdef STM32G4xx_HAL_CRC_H
+#ifdef STM32F4xx_HAL_CRC_H
 CRC_HandleTypeDef hcrc;
 #endif
 GPIO_InitTypeDef GPIO_InitStruct = {0};
 TIM_HandleTypeDef TimerHandle = {0};
-
 uint32_t Timer_Prescaler = (MCUFREQ/DEFAULTBAUDRATE)/TIMERDIV;//(freq MCU/freq timer)/divider timer clock source
 
 typedef struct
@@ -218,7 +216,7 @@ static inline void LuosHAL_ComReceive(void)
     }
     else
     {
-        LUOS_COM->ICR = 0xFFFFFFFF;
+        LUOS_COM->SR = 0xFFFFFFFF;
     }
 }
 /******************************************************************************
@@ -268,11 +266,11 @@ void LuosHAL_SetTxLockDetecState(uint8_t Enable)
         __HAL_GPIO_EXTI_CLEAR_IT(TX_LOCK_DETECT_IRQ);
         if (Enable == true)
         {
-            EXTI->IMR1 |= TX_LOCK_DETECT_PIN;
+            EXTI->IMR |= TX_LOCK_DETECT_PIN;
         }
         else
         {
-            EXTI->IMR1 &= ~ TX_LOCK_DETECT_PIN;
+            EXTI->IMR &= ~ TX_LOCK_DETECT_PIN;
         }
     }
 }
@@ -315,6 +313,9 @@ static void LuosHAL_TimeoutInit(void)
 {
     //initialize clock
     LUOS_TIMER_CLOCK_ENABLE();
+
+    //Disable CNT
+    LUOS_TIMER->CR1 &= ~(TIM_CR1_CEN);//disable counter
 
     TimerHandle.Instance = LUOS_TIMER;
     TimerHandle.Init.Period            = TIMER_RELOAD_CNT;
@@ -372,25 +373,25 @@ static void LuosHAL_GPIOInit(void)
     //Activate Clock for PIN choosen in luosHAL
     PORT_CLOCK_ENABLE();
 
+    /*Configure GPIO pins : RxEN_Pin */
     if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
     {
-		/*Configure GPIO pins : RxEN_Pin */
-		GPIO_InitStruct.Pin = RX_EN_PIN;
-		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-		HAL_GPIO_Init(RX_EN_PORT, &GPIO_InitStruct);
-    }
+	    GPIO_InitStruct.Pin = RX_EN_PIN;
+	    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+	    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+	    HAL_GPIO_Init(RX_EN_PORT, &GPIO_InitStruct);
+	}
 
+    /*Configure GPIO pins : TxEN_Pin */
     if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
     {
-		/*Configure GPIO pins : TxEN_Pin */
-		GPIO_InitStruct.Pin = TX_EN_PIN;
-		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-		HAL_GPIO_Init(TX_EN_PORT, &GPIO_InitStruct);
-    }
+	    GPIO_InitStruct.Pin = TX_EN_PIN;
+	    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+	    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+	    HAL_GPIO_Init(TX_EN_PORT, &GPIO_InitStruct);
+	}
 
     /*Configure GPIO pins : TX_LOCK_DETECT_Pin */
     GPIO_InitStruct.Pin = TX_LOCK_DETECT_PIN;
@@ -486,7 +487,7 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
     if (GPIO == TX_LOCK_DETECT_PIN)
     {
         ctx.tx.lock = true;
-        EXTI->IMR1 &= ~ TX_LOCK_DETECT_PIN;
+        EXTI->IMR &= ~ TX_LOCK_DETECT_PIN;
     }
     else
     {
@@ -559,7 +560,7 @@ uint8_t LuosHAL_GetPTPState(uint8_t PTPNbr)
  ******************************************************************************/
 static void LuosHAL_CRCInit(void)
 {
-#ifdef STM32G4xx_HAL_CRC_H
+#ifdef STM32L4xx_HAL_CRC_H
     __HAL_RCC_CRC_CLK_ENABLE();
     hcrc.Instance = CRC;
     hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_DISABLE;
@@ -583,7 +584,7 @@ static void LuosHAL_CRCInit(void)
  ******************************************************************************/
 void LuosHAL_ComputeCRC(uint8_t *data, uint8_t *crc)
 {
-#ifdef STM32G4xx_HAL_CRC_H
+#ifdef STM32L4xx_HAL_CRC_H
     LuosHAL_SetIrqState(false);
     hcrc.Instance->INIT = *(uint16_t *)crc;
     __HAL_CRC_DR_RESET(&hcrc);
@@ -622,9 +623,9 @@ static void LuosHAL_FlashEraseLuosMemoryInfo(void)
     uint32_t page_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
 
-    s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
-    s_eraseinit.Page = NB_OF_PAGE - 1;
-    s_eraseinit.NbPages = 1;
+    s_eraseinit.TypeErase = FLASH_TYPEERASE_SECTORS;
+    s_eraseinit.NbSectors = 1;
+    s_eraseinit.Sector = FLASH_SECTOR_11;
 
     // Erase Page
     HAL_FLASH_Unlock();
@@ -684,3 +685,4 @@ void LUOS_TIMER_IRQHANDLER()
 {
     LuosHAL_ComTimeout();
 }
+
