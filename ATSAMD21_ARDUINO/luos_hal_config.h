@@ -75,20 +75,6 @@
 #define TX_EN_PORT g_APinDescription[3].ulPort
 #endif
 
-#ifndef COM_LVL_DOWN_PIN
-#define COM_LVL_DOWN_PIN DISABLE
-#endif
-#ifndef COM_LVL_DOWN_PORT
-#define COM_LVL_DOWN_PORT DISABLE
-#endif
-
-#ifndef COM_LVL_UP_PIN
-#define COM_LVL_UP_PIN DISABLE
-#endif
-#ifndef COM_LVL_UP_PORT
-#define COM_LVL_UP_PORT DISABLE
-#endif
-
 #ifndef COM_TX_PIN
 #define COM_TX_PIN g_APinDescription[PIN_SERIAL1_TX].ulPin
 #endif

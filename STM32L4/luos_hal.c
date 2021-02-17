@@ -372,28 +372,6 @@ static void LuosHAL_GPIOInit(void)
     //Activate Clock for PIN choosen in luosHAL
     PORT_CLOCK_ENABLE();
 
-    /*Configure GPIO pin : COM_LVL_DOWN_PIN */
-    GPIO_InitStruct.Pin = COM_LVL_DOWN_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    if ((COM_LVL_DOWN_PIN != DISABLE) || (COM_LVL_DOWN_PORT != DISABLE))
-    {
-        HAL_GPIO_Init(COM_LVL_DOWN_PORT, &GPIO_InitStruct);
-        HAL_GPIO_WritePin(COM_LVL_DOWN_PORT, COM_LVL_DOWN_PIN, GPIO_PIN_RESET); // Setup pull down pins
-    }
-
-    /*Configure GPIO pin : COM_LVL_UP_PIN */
-    GPIO_InitStruct.Pin = COM_LVL_UP_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    if ((COM_LVL_UP_PIN != DISABLE) || (COM_LVL_UP_PORT != DISABLE))
-    {
-        HAL_GPIO_Init(COM_LVL_UP_PORT, &GPIO_InitStruct);
-        HAL_GPIO_WritePin(COM_LVL_UP_PORT, COM_LVL_UP_PIN, GPIO_PIN_SET); // Setup pull up pins
-    }
-
     if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
     {
         /*Configure GPIO pins : RxEN_Pin */

@@ -72,20 +72,6 @@
 #define TX_EN_PORT                  GPIOB
 #endif
 
-#ifndef COM_LVL_DOWN_PIN
-#define COM_LVL_DOWN_PIN            GPIO_PIN_12
-#endif
-#ifndef COM_LVL_DOWN_PORT
-#define COM_LVL_DOWN_PORT           GPIOA
-#endif
-
-#ifndef COM_LVL_UP_PIN
-#define COM_LVL_UP_PIN              GPIO_PIN_0
-#endif
-#ifndef COM_LVL_UP_PORT
-#define COM_LVL_UP_PORT             GPIOB
-#endif
-
 #ifndef COM_TX_PIN
 #define COM_TX_PIN                  GPIO_PIN_9
 #endif

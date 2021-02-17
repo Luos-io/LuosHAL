@@ -76,20 +76,6 @@
 #define TX_EN_PORT 0
 #endif
 
-#ifndef COM_LVL_DOWN_PIN
-#define COM_LVL_DOWN_PIN 8
-#endif
-#ifndef COM_LVL_DOWN_PORT
-#define COM_LVL_DOWN_PORT 0
-#endif
-
-#ifndef COM_LVL_UP_PIN
-#define COM_LVL_UP_PIN 9
-#endif
-#ifndef COM_LVL_UP_PORT
-#define COM_LVL_UP_PORT 0
-#endif
-
 #ifndef COM_TX_PIN
 #define COM_TX_PIN 4
 #endif

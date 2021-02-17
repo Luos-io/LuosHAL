@@ -391,22 +391,6 @@ static void LuosHAL_GPIOInit(void)
     //Activate Clock for PIN choosen in luosHAL
     PORT_CLOCK_ENABLE();
 
-    /*Configure GPIO pin : COM_LVL_UP_PIN */
-    if ((COM_LVL_UP_PIN != DISABLE) || (COM_LVL_UP_PORT != DISABLE))
-    {
-		PORT->Group[COM_LVL_UP_PORT].PINCFG[COM_LVL_UP_PIN].reg = PORT_PINCFG_RESETVALUE; //no pin mux / no input /  no pull / low streght
-    	PORT->Group[COM_LVL_UP_PORT].DIRSET.reg = (1 << COM_LVL_UP_PIN); //Output
-    	PORT->Group[COM_LVL_UP_PORT].OUTSET.reg = (1 << COM_LVL_UP_PIN); //set output high
-    }
-    
-    /*Configure GPIO pin : COM_LVL_DOWN_PIN */
-    if ((COM_LVL_DOWN_PIN != DISABLE) || (COM_LVL_DOWN_PORT != DISABLE))
-    {
-		PORT->Group[COM_LVL_DOWN_PORT].PINCFG[COM_LVL_DOWN_PIN].reg = PORT_PINCFG_RESETVALUE; //no pin mux / no input /  no pull / low streght
-    	PORT->Group[COM_LVL_DOWN_PORT].DIRSET.reg = (1 << COM_LVL_DOWN_PIN); //Output
-    	PORT->Group[COM_LVL_DOWN_PORT].OUTCLR.reg = (1 << COM_LVL_DOWN_PIN); //set output low
-    }
-
     if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
     {
 	    /*Configure GPIO pins : RxEN_Pin */ 
