@@ -14,7 +14,7 @@
 
 #define DISABLE 0x00
 #define MCUFREQ 168000000
-#define TIMERDIV 1
+#define TIMERDIV 2
 
 /*******************************************************************************
  * PINOUT CONFIG
@@ -55,7 +55,7 @@
 #define TX_LOCK_DETECT_PORT         GPIOB
 #endif
 #ifndef TX_LOCK_DETECT_IRQ
-#define TX_LOCK_DETECT_IRQ         EXTI15_10_IRQn
+#define TX_LOCK_DETECT_IRQ          EXTI15_10_IRQn
 #endif
 
 #ifndef RX_EN_PIN

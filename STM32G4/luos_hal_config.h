@@ -29,23 +29,23 @@
 
 //PTP pin definition
 #ifndef PTPA_PIN
-#define PTPA_PIN                    GPIO_PIN_8
+#define PTPA_PIN                    GPIO_PIN_5
 #endif
 #ifndef PTPA_PORT
-#define PTPA_PORT                   GPIOA
+#define PTPA_PORT                   GPIOB
 #endif
 #ifndef PTPA_IRQ
 #define PTPA_IRQ                    EXTI9_5_IRQn
 #endif
 
 #ifndef PTPB_PIN
-#define PTPB_PIN                    GPIO_PIN_13
+#define PTPB_PIN                    GPIO_PIN_4
 #endif
 #ifndef PTPB_PORT
 #define PTPB_PORT                   GPIOB
 #endif
 #ifndef PTPB_IRQ
-#define PTPB_IRQ                    EXTI15_10_IRQn
+#define PTPB_IRQ                    EXTI4_IRQn
 #endif
 
 //COM pin definition
@@ -60,14 +60,14 @@
 #endif
 
 #ifndef RX_EN_PIN
-#define RX_EN_PIN                   GPIO_PIN_14
+#define RX_EN_PIN                   GPIO_PIN_7
 #endif
 #ifndef RX_EN_PORT
 #define RX_EN_PORT                  GPIOB
 #endif
 
 #ifndef TX_EN_PIN
-#define TX_EN_PIN                   GPIO_PIN_15
+#define TX_EN_PIN                   GPIO_PIN_6
 #endif
 #ifndef TX_EN_PORT
 #define TX_EN_PORT                  GPIOB
@@ -134,7 +134,7 @@
 #define PAGE_SIZE                   (uint32_t) FLASH_PAGE_SIZE
 #endif
 #ifndef ADDRESS_LAST_PAGE_FLASH
-#define ADDRESS_LAST_PAGE_FLASH     ((uint32_t)0x0801F800)
+#define ADDRESS_LAST_PAGE_FLASH     ((uint32_t)((FLASH_BASE+FLASH_SIZE)-FLASH_PAGE_SIZE))
 #endif
 
 #endif /* _LUOSHAL_CONFIG_H_ */
