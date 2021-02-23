@@ -132,6 +132,9 @@
 #ifndef PAGE_SIZE
 #define PAGE_SIZE                   (uint32_t) 0x400
 #endif
+#ifndef FLASH_SECTOR
+#define FLASH_SECTOR                FLASH_SECTOR_11
+#endif
 #ifndef ADDRESS_LAST_PAGE_FLASH
 #define ADDRESS_LAST_PAGE_FLASH     ((uint32_t)(FLASH_END-PAGE_SIZE))
 #endif

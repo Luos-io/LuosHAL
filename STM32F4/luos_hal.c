@@ -625,7 +625,7 @@ static void LuosHAL_FlashEraseLuosMemoryInfo(void)
 
     s_eraseinit.TypeErase = FLASH_TYPEERASE_SECTORS;
     s_eraseinit.NbSectors = 1;
-    s_eraseinit.Sector = FLASH_SECTOR_11;
+    s_eraseinit.Sector = FLASH_SECTOR;
 
     // Erase Page
     HAL_FLASH_Unlock();
