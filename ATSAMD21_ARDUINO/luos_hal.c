@@ -432,7 +432,7 @@ static void LuosHAL_GPIOInit(void)
             EIC->CONFIG[Config].reg &=~ (EIC_CONFIG_SENSE0_Msk << Position);//reset sense mode
             EIC->CONFIG[Config].reg |= EIC_CONFIG_SENSE0_FALL_Val << Position;// Falling EDGE
             EIC->INTFLAG.reg = (1 << TX_LOCK_DETECT_IRQ); //clear IT flag
-            EIC->INTENSET.reg = (1 << TX_LOCK_DETECT_IRQ);// enable IT
+            EIC->INTENCLR.reg = (1 << TX_LOCK_DETECT_IRQ);
         }
     }
 
@@ -506,6 +506,7 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
     if (GPIO == TX_LOCK_DETECT_PIN)
     {
         ctx.tx.lock = true;
+        LuosHAL_ResetTimeout();
         EIC->INTENCLR.reg = (1 << TX_LOCK_DETECT_IRQ);
     }
     else

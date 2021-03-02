@@ -164,9 +164,9 @@ void LuosHAL_SetTxState(uint8_t Enable)
     else
     {
         COM_TX_PORT->OTYPER |= (uint32_t)(COM_TX_PIN);//put Tx in Open drain
-        if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
+        if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
         {
-            HAL_GPIO_WritePin(RX_EN_PORT, RX_EN_PIN, GPIO_PIN_RESET);
+            HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_RESET);
         }
     }
 }
@@ -440,6 +440,7 @@ static void LuosHAL_GPIOInit(void)
 
     if (TX_LOCK_DETECT_IRQ != DISABLE)
     {
+        EXTI->IMR1 &= ~ TX_LOCK_DETECT_PIN;
         HAL_NVIC_SetPriority(TX_LOCK_DETECT_IRQ, 1, 0);
         HAL_NVIC_EnableIRQ(TX_LOCK_DETECT_IRQ);
     }
@@ -486,6 +487,7 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
     if (GPIO == TX_LOCK_DETECT_PIN)
     {
     	ctx.tx.lock = true;
+        LuosHAL_ResetTimeout();
         EXTI->IMR1 &= ~ TX_LOCK_DETECT_PIN;
     }
     else

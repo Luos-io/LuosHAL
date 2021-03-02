@@ -440,6 +440,7 @@ static void LuosHAL_GPIOInit(void)
 
     if (TX_LOCK_DETECT_IRQ != DISABLE)
     {
+    	EXTI->IMR1 &= ~ TX_LOCK_DETECT_PIN;
         HAL_NVIC_SetPriority(TX_LOCK_DETECT_IRQ, 1, 0);
         HAL_NVIC_EnableIRQ(TX_LOCK_DETECT_IRQ);
     }
@@ -486,6 +487,7 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
     if (GPIO == TX_LOCK_DETECT_PIN)
     {
         ctx.tx.lock = true;
+        LuosHAL_ResetTimeout();
         EXTI->IMR1 &= ~ TX_LOCK_DETECT_PIN;
     }
     else
