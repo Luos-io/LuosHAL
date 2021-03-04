@@ -190,19 +190,11 @@ void LuosHAL_SetRxState(uint8_t Enable)
     	LL_USART_RequestRxDataFlush(LUOS_COM);  // Clear data register
         LL_USART_EnableDirectionRx(LUOS_COM); // Enable Rx com
         LL_USART_EnableIT_RXNE(LUOS_COM);// Enable Rx IT
-        if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
-        {
-            HAL_GPIO_WritePin(RX_EN_PORT, RX_EN_PIN, GPIO_PIN_RESET);
-        }
     }
     else
     {
         LL_USART_DisableDirectionRx(LUOS_COM); // Disable Rx com
         LL_USART_DisableIT_RXNE(LUOS_COM); // Disable Rx IT
-        if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
-        {
-            HAL_GPIO_WritePin(RX_EN_PORT, RX_EN_PIN, GPIO_PIN_SET);
-        }
     }
 }
 /******************************************************************************
