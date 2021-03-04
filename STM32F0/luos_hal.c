@@ -49,11 +49,8 @@ static void LuosHAL_SystickInit(void);
 static void LuosHAL_FlashInit(void);
 static void LuosHAL_CRCInit(void);
 static void LuosHAL_TimeoutInit(void);
-static inline void LuosHAL_ComTimeout(void);
 static void LuosHAL_GPIOInit(void);
 static void LuosHAL_FlashEraseLuosMemoryInfo(void);
-static inline void LuosHAL_ComReceive(void);
-static inline void LuosHAL_GPIOProcess(uint16_t GPIO);
 static void LuosHAL_RegisterPTP(void);
 
 /////////////////////////Luos Library Needed function///////////////////////////
@@ -209,7 +206,7 @@ void LuosHAL_SetRxState(uint8_t Enable)
  * @param None
  * @return None
  ******************************************************************************/
-static inline void LuosHAL_ComReceive(void)
+void LUOS_COM_IRQHANDLER()
 {
     // Reset timeout to it's default value
     LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
@@ -387,7 +384,7 @@ void LuosHAL_ResetTimeout(uint16_t nbrbit)
  * @param None
  * @return None
  ******************************************************************************/
-static inline void LuosHAL_ComTimeout(void)
+void LUOS_TIMER_IRQHANDLER()
 {
     if (__HAL_TIM_GET_FLAG(&TimerHandle, TIM_FLAG_UPDATE) != RESET)
     {
@@ -519,20 +516,20 @@ static void LuosHAL_RegisterPTP(void)
  * @param GPIO IT line
  * @return None
  ******************************************************************************/
-static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
+void PINOUT_IRQHANDLER(uint16_t GPIO_Pin)
 {
     ////Process for Tx Lock Detec
-    if (GPIO == TX_LOCK_DETECT_PIN)
+    if (GPIO_Pin == TX_LOCK_DETECT_PIN)
     {
-    	ctx.tx.lock = true;
-    	LuosHAL_ResetTimeout();
-        EXTI->IMR &= ~ TX_LOCK_DETECT_PIN;
+        ctx.tx.lock = true;
+        LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
+        EXTI->IMR &= ~TX_LOCK_DETECT_PIN;
     }
     else
     {
         for (uint8_t i = 0; i < NBR_PORT; i++)
         {
-            if (GPIO == PTP[i].Pin)
+            if (GPIO_Pin == PTP[i].Pin)
             {
                 PortMng_PtpHandler(i);
                 break;
@@ -709,18 +706,4 @@ void LuosHAL_FlashWriteLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *dat
 void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data)
 {
     memcpy(data, (void *)(addr), size);
-}
-
-/////////////////////////Special LuosHAL function///////////////////////////
-void PINOUT_IRQHANDLER(uint16_t GPIO_Pin)
-{
-    LuosHAL_GPIOProcess(GPIO_Pin);
-}
-void LUOS_COM_IRQHANDLER()
-{
-    LuosHAL_ComReceive();
-}
-void LUOS_TIMER_IRQHANDLER()
-{
-    LuosHAL_ComTimeout();
 }
