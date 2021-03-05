@@ -15,7 +15,12 @@
 
 #define DISABLE 0x00
 
-#define MCUFREQ 48000000
+#ifndef MCUFREQ
+#define MCUFREQ 48000000 //MCU frequence
+#endif
+#ifndef TIMERDIV
+#define TIMERDIV 1 //clock divider for timer clock chosen
+#endif
 /*******************************************************************************
  * PINOUT CONFIG
  ******************************************************************************/
@@ -104,7 +109,7 @@
 #ifndef PINOUT_IRQHANDLER
 #define PINOUT_IRQHANDLER() EIC_Handler()
 #endif
-  
+
 /*******************************************************************************
  * COM CONFIG
  ******************************************************************************/

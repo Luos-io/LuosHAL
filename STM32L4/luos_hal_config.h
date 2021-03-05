@@ -13,9 +13,13 @@
 #include "stm32l4xx_hal.h"
 
 #define DISABLE 0x00
-#define MCUFREQ 80000000
-#define TIMERDIV 1
 
+#ifndef MCUFREQ
+#define MCUFREQ 80000000 //MCU frequence
+#endif
+#ifndef TIMERDIV
+#define TIMERDIV 1 //clock divider for timer clock chosen
+#endif
 /*******************************************************************************
  * PINOUT CONFIG
  ******************************************************************************/

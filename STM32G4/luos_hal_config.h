@@ -14,9 +14,12 @@
 
 #define DISABLE 0x00
 
-#define MCUFREQ 170000000
-#define TIMERDIV 1
-
+#ifndef MCUFREQ
+#define MCUFREQ 170000000 //MCU frequence
+#endif
+#ifndef TIMERDIV
+#define TIMERDIV 1 //clock divider for timer clock chosen
+#endif
 /*******************************************************************************
  * PINOUT CONFIG
  ******************************************************************************/
