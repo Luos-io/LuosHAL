@@ -1,7 +1,7 @@
 /******************************************************************************
  * @file luosHAL
  * @brief Luos Hardware Abstration Layer. Describe Low layer fonction
- * @MCU Family STM32FO
+ * @MCU Family XXX
  * @author Luos
  * @version 0.0.0
  ******************************************************************************/
@@ -15,7 +15,6 @@
  * Definitions
  ******************************************************************************/
 #define LUOS_UUID
-#define MCUFREQ
 
 #define ADDRESS_ALIASES_FLASH ADDRESS_LAST_PAGE_FLASH
 #define ADDRESS_BOOT_FLAG_FLASH (ADDRESS_LAST_PAGE_FLASH + PAGE_SIZE) - 4
@@ -33,10 +32,10 @@ uint32_t LuosHAL_GetSystick(void);
 void LuosHAL_ComInit(uint32_t Baudrate);
 void LuosHAL_SetTxState(uint8_t Enable);
 void LuosHAL_SetRxState(uint8_t Enable);
-uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size);
-void LuosHAL_SetTxLockDetecState(uint8_t Enable);
+void LuosHAL_ComTransmit(uint8_t *data, uint16_t size);
 uint8_t LuosHAL_GetTxLockState(void);
-void LuosHAL_ComTxComplete(void);
+void LuosHAL_SetRxDetecPin(uint8_t Enable);
+void LuosHAL_ResetTimeout(uint16_t nbrbit);
 void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr);
 void LuosHAL_SetPTPReverseState(uint8_t PTPNbr);
 void LuosHAL_PushPTP(uint8_t PTPNbr);
