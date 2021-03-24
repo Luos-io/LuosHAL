@@ -329,9 +329,12 @@ uint8_t LuosHAL_GetTxLockState(void)
 #else
     if ((TX_LOCK_DETECT_PIN != DISABLE) && (TX_LOCK_DETECT_PORT != DISABLE))
     {
+        if(HAL_GPIO_ReadPin(TX_LOCK_DETECT_PORT, TX_LOCK_DETECT_PIN) == GPIO_PIN_RESET)
+        {
+            result = true;
+        }
         if (TX_LOCK_DETECT_IRQ == DISABLE)
         {
-            result = HAL_GPIO_ReadPin(TX_LOCK_DETECT_PORT, TX_LOCK_DETECT_PIN);
             if (result == true)
             {
                 LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
@@ -425,20 +428,6 @@ static void LuosHAL_GPIOInit(void)
         HAL_GPIO_Init(TX_EN_PORT, &GPIO_InitStruct);
     }
 
-    /*Configure GPIO pins : TX_LOCK_DETECT_Pin */
-    GPIO_InitStruct.Pin = TX_LOCK_DETECT_PIN;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    if ((TX_LOCK_DETECT_PIN != DISABLE) || (TX_LOCK_DETECT_PORT != DISABLE))
-    {
-        if (TX_LOCK_DETECT_IRQ != DISABLE)
-        {
-            GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-        }
-        HAL_GPIO_Init(TX_LOCK_DETECT_PORT, &GPIO_InitStruct);
-    }
-
     /*Configure GPIO pin : TxPin */
     GPIO_InitStruct.Pin = COM_TX_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
@@ -471,11 +460,20 @@ static void LuosHAL_GPIOInit(void)
         HAL_NVIC_EnableIRQ(PTP[i].IRQ);
     }
 
-    if (TX_LOCK_DETECT_IRQ != DISABLE)
+    if ((TX_LOCK_DETECT_PIN != DISABLE) || (TX_LOCK_DETECT_PORT != DISABLE))
     {
-    	EXTI->IMR &= ~ TX_LOCK_DETECT_PIN;
-        HAL_NVIC_SetPriority(TX_LOCK_DETECT_IRQ, 1, 0);
-        HAL_NVIC_EnableIRQ(TX_LOCK_DETECT_IRQ);
+        /*Configure GPIO pins : TX_LOCK_DETECT_Pin */
+        GPIO_InitStruct.Pin = TX_LOCK_DETECT_PIN;
+        GPIO_InitStruct.Pull = GPIO_PULLUP;
+        GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+        if (TX_LOCK_DETECT_IRQ != DISABLE)
+        {
+            GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+            HAL_NVIC_SetPriority(TX_LOCK_DETECT_IRQ, 1, 0);
+            HAL_NVIC_EnableIRQ(TX_LOCK_DETECT_IRQ);
+        }
+        HAL_GPIO_Init(TX_LOCK_DETECT_PORT, &GPIO_InitStruct);
     }
 }
 /******************************************************************************
