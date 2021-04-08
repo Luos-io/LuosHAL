@@ -19,7 +19,6 @@
  * Definitions
  ******************************************************************************/
 #define DEFAULT_TIMEOUT 20
-
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -298,7 +297,7 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
  * @param None
  * @return Lock status
  ******************************************************************************/
-void LuosHAL_SetTxLockDetecState(uint8_t Enable)
+void LuosHAL_SetRxDetecPin(uint8_t Enable)
 {
     if (TX_LOCK_DETECT_IRQ != DISABLE)
     {
