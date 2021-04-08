@@ -18,6 +18,8 @@
 #include "stm32f0xx_ll_gpio.h"
 #include "stm32f0xx_ll_tim.h"
 #include "stm32f0xx_ll_exti.h"
+#include "stm32f0xx_ll_dma.h"
+#include "stm32f0xx_ll_system.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -25,7 +27,7 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-#ifdef STM32F0xx_HAL_CRC_H
+#ifdef USE_CRC_HW
 CRC_HandleTypeDef hcrc;
 #endif
 GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -89,6 +91,7 @@ void LuosHAL_SetIrqState(uint8_t Enable)
     if (Enable == true)
     {
         __enable_irq();
+
     }
     else
     {
@@ -145,6 +148,21 @@ void LuosHAL_ComInit(uint32_t Baudrate)
     //Timeout Initialization
     Timer_Prescaler = (MCUFREQ / Baudrate) / TIMERDIV;
     LuosHAL_TimeoutInit();
+
+#ifndef USE_TX_IT
+    LUOS_DMA_CLOCK_ENABLE();
+
+    LL_DMA_SetDataTransferDirection(LUOS_DMA, LUOS_DMA_CHANNEL, LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
+    LL_DMA_SetChannelPriorityLevel(LUOS_DMA, LUOS_DMA_CHANNEL, LL_DMA_PRIORITY_LOW);
+    LL_DMA_SetMode(LUOS_DMA, LUOS_DMA_CHANNEL, LL_DMA_MODE_NORMAL);
+    LL_DMA_SetPeriphIncMode(LUOS_DMA, LUOS_DMA_CHANNEL, LL_DMA_PERIPH_NOINCREMENT);
+    LL_DMA_SetMemoryIncMode(LUOS_DMA, LUOS_DMA_CHANNEL, LL_DMA_MEMORY_INCREMENT);
+    LL_DMA_SetPeriphSize(LUOS_DMA, LUOS_DMA_CHANNEL, LL_DMA_PDATAALIGN_BYTE);
+    LL_DMA_SetMemorySize(LUOS_DMA, LUOS_DMA_CHANNEL, LL_DMA_MDATAALIGN_BYTE);
+    LL_SYSCFG_SetRemapDMA_USART(LUOS_DMA_REMAP);
+    LL_DMA_SetPeriphAddress(LUOS_DMA, LUOS_DMA_CHANNEL, (uint32_t)&LUOS_COM->TDR);
+#endif
+
 }
 /******************************************************************************
  * @brief Tx enable/disable relative to com
@@ -170,10 +188,15 @@ void LuosHAL_SetTxState(uint8_t Enable)
         {
             LL_GPIO_ResetOutputPin(TX_EN_PORT, TX_EN_PIN);
         }
+#ifdef USE_TX_IT
         // Stop current transmit operation
         data_size_to_transmit = 0;
         // Disable Transmission empty buffer interrupt
         LL_USART_DisableIT_TXE(LUOS_COM);
+#else
+        LL_USART_DisableDMAReq_TX(LUOS_COM);
+        LL_DMA_DisableChannel(LUOS_DMA, LUOS_DMA_CHANNEL);
+#endif
         // Disable Transmission complete interrupt
         LL_USART_DisableIT_TC(LUOS_COM);
     }
@@ -213,11 +236,15 @@ void LUOS_COM_IRQHANDLER()
         // We receive a byte
         uint8_t data = LL_USART_ReceiveData8(LUOS_COM);
         ctx.rx.callback(&data); // send reception byte to state machine
+        if (data_size_to_transmit == 0)
+        {
+            LUOS_COM->ICR = 0xFFFFFFFF;
+            return;
+        }
     }
     else if (LL_USART_IsActiveFlag_FE(LUOS_COM) != RESET)
     {
         // Framing ERROR
-        LL_USART_ClearFlag_FE(LUOS_COM);
         ctx.rx.status.rx_framing_error = true;
     }
 
@@ -232,6 +259,7 @@ void LUOS_COM_IRQHANDLER()
         LL_USART_ClearFlag_TC(LUOS_COM);
         LL_USART_DisableIT_TC(LUOS_COM);
     }
+#ifdef USE_TX_IT
     else if ((LL_USART_IsActiveFlag_TXE(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_TXE(LUOS_COM) != RESET))
     {
         // Transmit buffer empty (this is a software DMA)
@@ -246,6 +274,8 @@ void LUOS_COM_IRQHANDLER()
             LL_USART_EnableIT_TC(LUOS_COM);
         }
     }
+#endif
+    LUOS_COM->ICR = 0xFFFFFFFF;
 }
 /******************************************************************************
  * @brief Process data transmit
@@ -259,6 +289,7 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     // Disable RX detec pin if needed
     // Enable TX
     LuosHAL_SetTxState(true);
+
     // Reduce size by one because we send one directly
     data_size_to_transmit = size - 1;
     if (size > 1)
@@ -267,13 +298,28 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
         // **** NO DMA
         //Copy the data pointer globally alowing to keep it and run the transmission.
         tx_data = data;
+#ifdef USE_TX_IT
         // Send the first byte
         LL_USART_TransmitData8(LUOS_COM, *(tx_data++));
         // Enable Transmission empty buffer interrupt to transmit next datas
         LL_USART_EnableIT_TXE(LUOS_COM);
-        // **** DMA
-        // Setup DMA and run it
-        // Enable Transmission complete interrupt.
+        // Disable Transmission complete interrupt
+        LL_USART_DisableIT_TC(LUOS_COM);
+#else
+    data_size_to_transmit = 0;//Reset this value avoiding to check IT TC during collision
+    // Disable DMA to load new length to be tranmitted
+    LL_DMA_DisableChannel(LUOS_DMA, LUOS_DMA_CHANNEL);
+    // configure address to be transmitted by DMA
+    LL_DMA_SetMemoryAddress(LUOS_DMA, LUOS_DMA_CHANNEL, (uint32_t)data);
+    // set length to be tranmitted
+    LL_DMA_SetDataLength(LUOS_DMA, LUOS_DMA_CHANNEL, size);
+    // set request DMA
+    LL_USART_EnableDMAReq_TX(LUOS_COM);
+    // Enable DMA again
+    LL_DMA_EnableChannel(LUOS_DMA, LUOS_DMA_CHANNEL);
+    // enable transmit complete
+    LL_USART_EnableIT_TC(LUOS_COM);
+#endif
     }
     else
     {
@@ -282,6 +328,7 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
         // Enable Transmission complete interrupt because we only have one.
         LL_USART_EnableIT_TC(LUOS_COM);
     }
+    LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
 }
 /******************************************************************************
  * @brief set state of Txlock detection pin
@@ -360,17 +407,21 @@ static void LuosHAL_TimeoutInit(void)
     HAL_NVIC_EnableIRQ(LUOS_TIMER_IRQ);
 }
 /******************************************************************************
- * @brief Luos Timeout for Rx communication
+ * @brief Luos Timeout communication
  * @param None
  * @return None
  ******************************************************************************/
 void LuosHAL_ResetTimeout(uint16_t nbrbit)
 {
-	NVIC_ClearPendingIRQ(LUOS_TIMER_IRQ);// Clear IT pending NVIC
+    LL_TIM_DisableCounter(LUOS_TIMER);
+    NVIC_ClearPendingIRQ(LUOS_TIMER_IRQ);// Clear IT pending NVIC
     LL_TIM_ClearFlag_UPDATE(LUOS_TIMER);
     LL_TIM_SetCounter(LUOS_TIMER, 0);// Reset counter
-    LL_TIM_SetAutoReload(LUOS_TIMER, nbrbit);//reload value
-    LL_TIM_EnableCounter(LUOS_TIMER);
+    if(nbrbit != 0)
+    {
+        LL_TIM_SetAutoReload(LUOS_TIMER, nbrbit);//reload value
+        LL_TIM_EnableCounter(LUOS_TIMER);
+    }
 }
 /******************************************************************************
  * @brief Luos Timeout communication
@@ -386,6 +437,8 @@ void LUOS_TIMER_IRQHANDLER()
         if ((ctx.tx.lock == true)&&(LuosHAL_GetTxLockState() == false))
         {
             // Enable RX detection pin if needed
+            LuosHAL_SetRxState(true);
+            LuosHAL_SetTxState(false);
             Recep_Timeout();
         }
     }
@@ -507,7 +560,7 @@ static void LuosHAL_RegisterPTP(void)
 void PINOUT_IRQHANDLER(uint16_t GPIO_Pin)
 {
     ////Process for Tx Lock Detec
-    if (GPIO_Pin == TX_LOCK_DETECT_PIN)
+    if ((GPIO_Pin == TX_LOCK_DETECT_PIN)&&(TX_LOCK_DETECT_IRQ != DISABLE))
     {
         ctx.tx.lock = true;
         LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
@@ -584,7 +637,7 @@ uint8_t LuosHAL_GetPTPState(uint8_t PTPNbr)
  ******************************************************************************/
 static void LuosHAL_CRCInit(void)
 {
-#ifdef STM32F0xx_HAL_CRC_H
+#ifdef USE_CRC_HW
     __HAL_RCC_CRC_CLK_ENABLE();
     hcrc.Instance = CRC;
     hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_DISABLE;
@@ -690,3 +743,4 @@ void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data
 {
     memcpy(data, (void *)(addr), size);
 }
+
