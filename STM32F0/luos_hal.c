@@ -18,7 +18,7 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-#define TIMER_RELOAD_CNT 20
+#define DEFAULT_TIMEOUT 20
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -45,7 +45,6 @@ static void LuosHAL_SystickInit(void);
 static void LuosHAL_FlashInit(void);
 static void LuosHAL_CRCInit(void);
 static void LuosHAL_TimeoutInit(void);
-static void LuosHAL_ResetTimeout(void);
 static inline void LuosHAL_ComTimeout(void);
 static void LuosHAL_GPIOInit(void);
 static void LuosHAL_FlashEraseLuosMemoryInfo(void);
@@ -202,7 +201,8 @@ void LuosHAL_SetRxState(uint8_t Enable)
  ******************************************************************************/
 static inline void LuosHAL_ComReceive(void)
 {
-    LuosHAL_ResetTimeout();
+    LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
+    //Receive
     if ((LL_USART_IsActiveFlag_RXNE(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RXNE(LUOS_COM) != RESET))
     {
         uint8_t data = LL_USART_ReceiveData8(LUOS_COM);
@@ -285,7 +285,7 @@ uint8_t LuosHAL_GetTxLockState(void)
 #ifdef USART_ISR_BUSY
     if (READ_BIT(LUOS_COM->ISR, USART_ISR_BUSY) == (USART_ISR_BUSY))
     {
-        LuosHAL_ResetTimeout();
+        LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
         result = true;
     }
 #else
@@ -296,7 +296,7 @@ uint8_t LuosHAL_GetTxLockState(void)
             result = HAL_GPIO_ReadPin(TX_LOCK_DETECT_PORT, TX_LOCK_DETECT_PIN);
             if (result == true)
             {
-                LuosHAL_ResetTimeout();
+                LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
             }
         }
     }
@@ -314,7 +314,7 @@ static void LuosHAL_TimeoutInit(void)
     LUOS_TIMER_CLOCK_ENABLE();
 
     TimerHandle.Instance = LUOS_TIMER;
-    TimerHandle.Init.Period = TIMER_RELOAD_CNT;
+    TimerHandle.Init.Period = DEFAULT_TIMEOUT;
     TimerHandle.Init.Prescaler = Timer_Prescaler - 1;
     TimerHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     TimerHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -333,13 +333,13 @@ static void LuosHAL_TimeoutInit(void)
  * @param None
  * @return None
  ******************************************************************************/
-static void LuosHAL_ResetTimeout(void)
+void LuosHAL_ResetTimeout(uint16_t nbrbit)
 {
-    LUOS_TIMER->CR1 &= ~(TIM_CR1_CEN);                              // Disable counter
-    NVIC_ClearPendingIRQ(LUOS_TIMER_IRQ);                           // Clear IT pending
-    __HAL_TIM_CLEAR_IT(&TimerHandle, TIM_IT_UPDATE);                // Clear IT flag
-    LUOS_TIMER->CNT = 0;                                            // Reset counter
-    LUOS_TIMER->ARR = TIMER_RELOAD_CNT + ctx.tx.additionalDelay_us; //reload value
+    LUOS_TIMER->CR1 &= ~(TIM_CR1_CEN);               // Disable counter
+    NVIC_ClearPendingIRQ(LUOS_TIMER_IRQ);            // Clear IT pending
+    __HAL_TIM_CLEAR_IT(&TimerHandle, TIM_IT_UPDATE); // Clear IT flag
+    LUOS_TIMER->CNT = 0;                             // Reset counter
+    LUOS_TIMER->ARR = nbrbit;                        //reload value
     __HAL_TIM_ENABLE_IT(&TimerHandle, TIM_IT_UPDATE);
     LUOS_TIMER->CR1 |= TIM_CR1_CEN; // Enable counter
 }

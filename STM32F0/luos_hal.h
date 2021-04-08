@@ -35,6 +35,7 @@ uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size);
 void LuosHAL_SetTxLockDetecState(uint8_t Enable);
 uint8_t LuosHAL_GetTxLockState(void);
 void LuosHAL_ComTxComplete(void);
+void LuosHAL_ResetTimeout(uint16_t nbrbit);
 void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr);
 void LuosHAL_SetPTPReverseState(uint8_t PTPNbr);
 void LuosHAL_PushPTP(uint8_t PTPNbr);
