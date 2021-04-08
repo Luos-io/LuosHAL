@@ -608,24 +608,19 @@ static void LuosHAL_CRCInit(void)
  ******************************************************************************/
 void LuosHAL_ComputeCRC(uint8_t *data, uint8_t *crc)
 {
-#ifdef STM32F0xx_HAL_CRC_H
-    LuosHAL_SetIrqState(false);
+#ifdef USE_CRC_HW
     hcrc.Instance->INIT = *(uint16_t *)crc;
     __HAL_CRC_DR_RESET(&hcrc);
     *(uint16_t *)crc = (uint16_t)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, 1);
-    LuosHAL_SetIrqState(true);
 #else
-    for (uint8_t i = 0; i < 1; ++i)
+    uint16_t dbyte = *data;
+    *(uint16_t *)crc ^= dbyte << 8;
+    for (uint8_t j = 0; j < 8; ++j)
     {
-        uint16_t dbyte = data[i];
-        *(uint16_t *)crc ^= dbyte << 8;
-        for (uint8_t j = 0; j < 8; ++j)
-        {
-            uint16_t mix = *(uint16_t *)crc & 0x8000;
-            *(uint16_t *)crc = (*(uint16_t *)crc << 1);
-            if (mix)
-                *(uint16_t *)crc = *(uint16_t *)crc ^ 0x0007;
-        }
+        uint16_t mix = *(uint16_t *)crc & 0x8000;
+        *(uint16_t *)crc = (*(uint16_t *)crc << 1);
+        if (mix)
+            *(uint16_t *)crc = *(uint16_t *)crc ^ 0x0007;
     }
 #endif
 }
