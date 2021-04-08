@@ -19,6 +19,7 @@
  * Definitions
  ******************************************************************************/
 #define DEFAULT_TIMEOUT 20
+
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -38,6 +39,10 @@ typedef struct
 } Port_t;
 
 Port_t PTP[NBR_PORT];
+
+volatile uint16_t data_size_to_transmit = 0;
+volatile uint8_t *tx_data = 0;
+
 /*******************************************************************************
  * Function
  ******************************************************************************/
@@ -165,6 +170,12 @@ void LuosHAL_SetTxState(uint8_t Enable)
         {
             HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_RESET);
         }
+        // Stop current transmit operation
+        data_size_to_transmit = 0;
+        // Disable Transmission empty buffer interrupt
+        LL_USART_DisableIT_TXE(LUOS_COM);
+        // Disable Transmission complete interrupt
+        LL_USART_DisableIT_TC(LUOS_COM);
     }
 }
 /******************************************************************************
@@ -201,21 +212,47 @@ void LuosHAL_SetRxState(uint8_t Enable)
  ******************************************************************************/
 static inline void LuosHAL_ComReceive(void)
 {
+    // Reset timeout to it's default value
     LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
-    //Receive
+
+    // reception management
     if ((LL_USART_IsActiveFlag_RXNE(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_RXNE(LUOS_COM) != RESET))
     {
+        // We receive a byte
         uint8_t data = LL_USART_ReceiveData8(LUOS_COM);
         ctx.rx.callback(&data); // send reception byte to state machine
     }
     else if (LL_USART_IsActiveFlag_FE(LUOS_COM) != RESET)
     {
+        // Framing ERROR
         LL_USART_ClearFlag_FE(LUOS_COM);
         ctx.rx.status.rx_framing_error = true;
     }
-    else
+
+    // Transmission management
+    if ((LL_USART_IsActiveFlag_TC(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_TC(LUOS_COM) != RESET))
     {
-        LUOS_COM->ICR = 0xFFFFFFFF;
+        // Transmission complete
+        // Switch to reception mode
+        LuosHAL_SetRxState(true);
+        LuosHAL_SetTxState(false);
+        // Disable transmission complete IRQ
+        LL_USART_ClearFlag_TC(LUOS_COM);
+        LL_USART_DisableIT_TC(LUOS_COM);
+    }
+    else if ((LL_USART_IsActiveFlag_TXE(LUOS_COM) != RESET) && (LL_USART_IsEnabledIT_TXE(LUOS_COM) != RESET))
+    {
+        // Transmit buffer empty (this is a software DMA)
+        data_size_to_transmit--;
+        LL_USART_TransmitData8(LUOS_COM, *(tx_data++));
+        if (data_size_to_transmit == 0)
+        {
+            // Transmission complete, stop loading data and watch for the end of transmission
+            // Disable Transmission empty buffer interrupt
+            LL_USART_DisableIT_TXE(LUOS_COM);
+            // Enable Transmission complete interrupt
+            LL_USART_EnableIT_TC(LUOS_COM);
+        }
     }
 }
 /******************************************************************************
@@ -223,35 +260,38 @@ static inline void LuosHAL_ComReceive(void)
  * @param None
  * @return None
  ******************************************************************************/
-uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
+void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
 {
-    for (uint16_t i = 0; i < size; i++)
+    while (LL_USART_IsActiveFlag_TXE(LUOS_COM) == RESET)
+        ;
+    // Disable RX detec pin if needed
+    // Enable TX
+    LuosHAL_SetTxState(true);
+    // Reduce size by one because we send one directly
+    data_size_to_transmit = size - 1;
+    // Reset timeout timer
+    LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
+    if (size > 1)
     {
-        ctx.tx.lock = true;
-        while (!LL_USART_IsActiveFlag_TXE(LUOS_COM))
-        {
-        }
-        if (ctx.tx.collision)
-        {
-            // There is a collision
-            ctx.tx.collision = FALSE;
-            return 1;
-        }
-        LL_USART_TransmitData8(LUOS_COM, *(data + i));
-        LuosHAL_ResetTimeout();
+        // Start the data buffer transmission
+        // **** NO DMA
+        //Copy the data pointer globally alowing to keep it and run the transmission.
+        tx_data = data;
+        // Send the first byte
+        LL_USART_TransmitData8(LUOS_COM, *(tx_data++));
+        // Enable Transmission empty buffer interrupt to transmit next datas
+        LL_USART_EnableIT_TXE(LUOS_COM);
+        // **** DMA
+        // Setup DMA and run it
+        // Enable Transmission complete interrupt.
     }
-    __HAL_TIM_DISABLE_IT(&TimerHandle, TIM_IT_UPDATE);
-    return 0;
-}
-/******************************************************************************
- * @brief Luos Tx communication complete
- * @param None
- * @return None
- ******************************************************************************/
-void LuosHAL_ComTxComplete(void)
-{
-    while (!LL_USART_IsActiveFlag_TC(LUOS_COM));
-    LuosHAL_ResetTimeout();
+    else
+    {
+        // Transmit the only byte we have
+        LL_USART_TransmitData8(LUOS_COM, *data);
+        // Enable Transmission complete interrupt because we only have one.
+        LL_USART_EnableIT_TC(LUOS_COM);
+    }
 }
 /******************************************************************************
  * @brief set state of Txlock detection pin
@@ -356,6 +396,7 @@ static inline void LuosHAL_ComTimeout(void)
         LUOS_TIMER->CR1 &= ~(TIM_CR1_CEN);
         if (ctx.tx.lock == true)
         {
+            // Enable RX detection pin if needed
             Recep_Timeout();
         }
     }
