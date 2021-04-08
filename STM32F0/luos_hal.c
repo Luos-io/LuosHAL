@@ -1,6 +1,6 @@
 /******************************************************************************
  * @file luosHAL
- * @brief Luos Hardware Abstration Layer. Describe Low layer fonction 
+ * @brief Luos Hardware Abstration Layer. Describe Low layer fonction
  * @MCU Family STM32FO
  * @author Luos
  * @version 0.0.0
@@ -28,7 +28,7 @@ CRC_HandleTypeDef hcrc;
 GPIO_InitTypeDef GPIO_InitStruct = {0};
 TIM_HandleTypeDef TimerHandle = {0};
 
-uint32_t Timer_Prescaler = (MCUFREQ/DEFAULTBAUDRATE)/TIMERDIV;//(freq MCU/freq timer)/divider timer clock source
+uint32_t Timer_Prescaler = (MCUFREQ / DEFAULTBAUDRATE) / TIMERDIV; //(freq MCU/freq timer)/divider timer clock source
 
 typedef struct
 {
@@ -141,7 +141,7 @@ void LuosHAL_ComInit(uint32_t Baudrate)
     HAL_NVIC_SetPriority(LUOS_COM_IRQ, 0, 1);
 
     //Timeout Initialization
-    Timer_Prescaler = (MCUFREQ/Baudrate)/TIMERDIV;
+    Timer_Prescaler = (MCUFREQ / Baudrate) / TIMERDIV;
     LuosHAL_TimeoutInit();
 }
 /******************************************************************************
@@ -153,19 +153,19 @@ void LuosHAL_SetTxState(uint8_t Enable)
 {
     if (Enable == true)
     {
-    	COM_TX_PORT->OTYPER &= ~(uint32_t)(COM_TX_PIN);//put Tx in push pull
-    	if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
-    	{
-    		HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_SET);
-    	}
+        COM_TX_PORT->OTYPER &= ~(uint32_t)(COM_TX_PIN); //put Tx in push pull
+        if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
+        {
+            HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_SET);
+        }
     }
     else
     {
-    	COM_TX_PORT->OTYPER |= (uint32_t)(COM_TX_PIN);//put Tx in Open drain
-    	if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
-    	{
-    		HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_RESET);
-    	}
+        COM_TX_PORT->OTYPER |= (uint32_t)(COM_TX_PIN); //put Tx in Open drain
+        if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
+        {
+            HAL_GPIO_WritePin(TX_EN_PORT, TX_EN_PIN, GPIO_PIN_RESET);
+        }
     }
 }
 /******************************************************************************
@@ -177,21 +177,21 @@ void LuosHAL_SetRxState(uint8_t Enable)
 {
     if (Enable == true)
     {
-        LUOS_COM->RQR |= USART_RQR_RXFRQ;//clear data register
-        LUOS_COM->CR1 |= USART_CR1_RE;// Enable Rx com
-        LUOS_COM->CR1 |= USART_CR1_RXNEIE;// Enable Rx IT
+        LUOS_COM->RQR |= USART_RQR_RXFRQ;  // Clear data register
+        LUOS_COM->CR1 |= USART_CR1_RE;     // Enable Rx com
+        LUOS_COM->CR1 |= USART_CR1_RXNEIE; // Enable Rx IT
         if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
         {
-        	HAL_GPIO_WritePin(RX_EN_PORT, RX_EN_PIN, GPIO_PIN_RESET);
+            HAL_GPIO_WritePin(RX_EN_PORT, RX_EN_PIN, GPIO_PIN_RESET);
         }
     }
     else
     {
-        LUOS_COM->CR1 &= ~USART_CR1_RE;// disable Rx com
-        LUOS_COM->CR1 &= ~USART_CR1_RXNEIE;// disable Rx IT
+        LUOS_COM->CR1 &= ~USART_CR1_RE;     // Disable Rx com
+        LUOS_COM->CR1 &= ~USART_CR1_RXNEIE; // Disable Rx IT
         if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
         {
-        	HAL_GPIO_WritePin(RX_EN_PORT, RX_EN_PIN, GPIO_PIN_SET);
+            HAL_GPIO_WritePin(RX_EN_PORT, RX_EN_PIN, GPIO_PIN_SET);
         }
     }
 }
@@ -260,7 +260,7 @@ void LuosHAL_ComTxComplete(void)
  ******************************************************************************/
 void LuosHAL_SetTxLockDetecState(uint8_t Enable)
 {
-	if (TX_LOCK_DETECT_IRQ != DISABLE)
+    if (TX_LOCK_DETECT_IRQ != DISABLE)
     {
         __HAL_GPIO_EXTI_CLEAR_IT(TX_LOCK_DETECT_IRQ);
         if (Enable == true)
@@ -269,7 +269,7 @@ void LuosHAL_SetTxLockDetecState(uint8_t Enable)
         }
         else
         {
-            EXTI->IMR &= ~ TX_LOCK_DETECT_PIN;
+            EXTI->IMR &= ~TX_LOCK_DETECT_PIN;
         }
     }
 }
@@ -281,26 +281,26 @@ void LuosHAL_SetTxLockDetecState(uint8_t Enable)
 uint8_t LuosHAL_GetTxLockState(void)
 {
     uint8_t result = false;
-    
-    #ifdef USART_ISR_BUSY
+
+#ifdef USART_ISR_BUSY
     if (READ_BIT(LUOS_COM->ISR, USART_ISR_BUSY) == (USART_ISR_BUSY))
     {
         LuosHAL_ResetTimeout();
         result = true;
     }
-    #else
+#else
     if ((TX_LOCK_DETECT_PIN != DISABLE) && (TX_LOCK_DETECT_PORT != DISABLE))
     {
-        if(TX_LOCK_DETECT_IRQ == DISABLE)
+        if (TX_LOCK_DETECT_IRQ == DISABLE)
         {
             result = HAL_GPIO_ReadPin(TX_LOCK_DETECT_PORT, TX_LOCK_DETECT_PIN);
-            if(result == true)
+            if (result == true)
             {
                 LuosHAL_ResetTimeout();
             }
         }
     }
-    #endif
+#endif
     return result;
 }
 /******************************************************************************
@@ -314,15 +314,16 @@ static void LuosHAL_TimeoutInit(void)
     LUOS_TIMER_CLOCK_ENABLE();
 
     TimerHandle.Instance = LUOS_TIMER;
-    TimerHandle.Init.Period            = TIMER_RELOAD_CNT;
-    TimerHandle.Init.Prescaler         = Timer_Prescaler-1;
-    TimerHandle.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
-    TimerHandle.Init.CounterMode       = TIM_COUNTERMODE_UP;
+    TimerHandle.Init.Period = TIMER_RELOAD_CNT;
+    TimerHandle.Init.Prescaler = Timer_Prescaler - 1;
+    TimerHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    TimerHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
     TimerHandle.Init.RepetitionCounter = 0;
     TimerHandle.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-    if(HAL_TIM_Base_Init(&TimerHandle) != HAL_OK)
+    if (HAL_TIM_Base_Init(&TimerHandle) != HAL_OK)
     {
-        while(1);
+        while (1)
+            ;
     }
     HAL_NVIC_SetPriority(LUOS_TIMER_IRQ, 0, 2);
     HAL_NVIC_EnableIRQ(LUOS_TIMER_IRQ);
@@ -334,13 +335,13 @@ static void LuosHAL_TimeoutInit(void)
  ******************************************************************************/
 static void LuosHAL_ResetTimeout(void)
 {
-    LUOS_TIMER->CR1 &= ~(TIM_CR1_CEN);//disable counter
-    NVIC_ClearPendingIRQ(LUOS_TIMER_IRQ);// clear IT pending
-    __HAL_TIM_CLEAR_IT(&TimerHandle, TIM_IT_UPDATE);// clear IT flag
-    LUOS_TIMER->CNT = 0;//reset counter
-    LUOS_TIMER->ARR = TIMER_RELOAD_CNT;//relaod value
+    LUOS_TIMER->CR1 &= ~(TIM_CR1_CEN);                              // Disable counter
+    NVIC_ClearPendingIRQ(LUOS_TIMER_IRQ);                           // Clear IT pending
+    __HAL_TIM_CLEAR_IT(&TimerHandle, TIM_IT_UPDATE);                // Clear IT flag
+    LUOS_TIMER->CNT = 0;                                            // Reset counter
+    LUOS_TIMER->ARR = TIMER_RELOAD_CNT + ctx.tx.additionalDelay_us; //reload value
     __HAL_TIM_ENABLE_IT(&TimerHandle, TIM_IT_UPDATE);
-    LUOS_TIMER->CR1 |= TIM_CR1_CEN;//enable counter
+    LUOS_TIMER->CR1 |= TIM_CR1_CEN; // Enable counter
 }
 /******************************************************************************
  * @brief Luos Timeout for Rx communication
@@ -371,22 +372,22 @@ static void LuosHAL_GPIOInit(void)
 
     if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
     {
-		/*Configure GPIO pins : RxEN_Pin */
-		GPIO_InitStruct.Pin = RX_EN_PIN;
-		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-		HAL_GPIO_Init(RX_EN_PORT, &GPIO_InitStruct);
+        /*Configure GPIO pins : RxEN_Pin */
+        GPIO_InitStruct.Pin = RX_EN_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+        HAL_GPIO_Init(RX_EN_PORT, &GPIO_InitStruct);
     }
 
     if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
     {
-		/*Configure GPIO pins : TxEN_Pin */
-		GPIO_InitStruct.Pin = TX_EN_PIN;
-		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-		HAL_GPIO_Init(TX_EN_PORT, &GPIO_InitStruct);
+        /*Configure GPIO pins : TxEN_Pin */
+        GPIO_InitStruct.Pin = TX_EN_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+        HAL_GPIO_Init(TX_EN_PORT, &GPIO_InitStruct);
     }
 
     /*Configure GPIO pins : TX_LOCK_DETECT_Pin */
@@ -396,10 +397,10 @@ static void LuosHAL_GPIOInit(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     if ((TX_LOCK_DETECT_PIN != DISABLE) || (TX_LOCK_DETECT_PORT != DISABLE))
     {
-    	if (TX_LOCK_DETECT_IRQ != DISABLE)
-	    {
-	        GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-	    }
+        if (TX_LOCK_DETECT_IRQ != DISABLE)
+        {
+            GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+        }
         HAL_GPIO_Init(TX_LOCK_DETECT_PORT, &GPIO_InitStruct);
     }
 
