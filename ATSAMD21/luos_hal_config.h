@@ -12,6 +12,8 @@
 
 #include "samd21.h"
 
+//If your MCU do not Have DMA for tx transmit define USE_TX_IT
+
 #define DISABLE 0x00
 
 #ifndef MCUFREQ
@@ -133,10 +135,29 @@
 #define LUOS_COM_IRQHANDLER() SERCOM0_Handler()
 #endif
 /*******************************************************************************
+ * DMA CONFIG
+ ******************************************************************************/
+#ifndef LUOS_DMA_CLOCK_ENABLE
+#define LUOS_DMA_CLOCK_ENABLE()                                                                             \
+  do                                                                                                        \
+  {                                                                                                         \
+    PM_REGS->PM_AHBMASK |= PM_AHBMASK_DMAC_Msk;                                                        \
+  } while (0U)
+#endif
+#ifndef LUOS_DMA
+#define LUOS_DMA DMAC_REGS
+#endif
+#ifndef LUOS_DMA_TRIGGER
+#define LUOS_DMA_TRIGGER    2
+#endif
+#ifndef LUOS_DMA_CHANNEL
+#define LUOS_DMA_CHANNEL    0
+#endif
+/*******************************************************************************
  * COM TIMEOUT CONFIG
  ******************************************************************************/
-#ifndef LUOS_TIMER_LOCK_ENABLE
-#define LUOS_TIMER_LOCK_ENABLE()                                                                                              \
+#ifndef LUOS_TIMER_CLOCK_ENABLE
+#define LUOS_TIMER_CLOCK_ENABLE()                                                                                              \
   do                                                                                                                          \
   {                                                                                                                           \
     GCLK_REGS->GCLK_CLKCTRL = GCLK_CLKCTRL_ID(GCLK_CLKCTRL_ID_TCC2_TC3_Val) | GCLK_CLKCTRL_GEN(0x0) | GCLK_CLKCTRL_CLKEN_Msk; \

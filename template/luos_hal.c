@@ -1,6 +1,6 @@
 /******************************************************************************
  * @file luosHAL
- * @brief Luos Hardware Abstration Layer. Describe Low layer fonction 
+ * @brief Luos Hardware Abstration Layer. Describe Low layer fonction
  * @MCU Family XXX
  * @author Luos
  * @version 0.0.0
@@ -17,7 +17,7 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-#define TIMER_RELOAD_CNT 20
+#define DEFAULT_TIMEOUT 20
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -31,6 +31,9 @@ typedef struct
 } Port_t;
 
 Port_t PTP[NBR_PORT];
+
+volatile uint16_t data_size_to_transmit = 0;
+volatile uint8_t *tx_data = 0;
 /*******************************************************************************
  * Function
  ******************************************************************************/
@@ -38,12 +41,8 @@ static void LuosHAL_SystickInit(void);
 static void LuosHAL_FlashInit(void);
 static void LuosHAL_CRCInit(void);
 static void LuosHAL_TimeoutInit(void);
-static void LuosHAL_ResetTimeout(void);
-static inline void LuosHAL_ComTimeout(void);
 static void LuosHAL_GPIOInit(void);
 static void LuosHAL_FlashEraseLuosMemoryInfo(void);
-static inline void LuosHAL_ComReceive(void);
-static inline void LuosHAL_GPIOProcess(uint16_t GPIO);
 static void LuosHAL_RegisterPTP(void);
 
 /////////////////////////Luos Library Needed function///////////////////////////
@@ -102,7 +101,7 @@ static void LuosHAL_SystickInit(void)
  ******************************************************************************/
 uint32_t LuosHAL_GetSystick(void)
 {
-    return ; //return getsystick
+    return ; //return  tick
 }
 /******************************************************************************
  * @brief Luos HAL Initialize Generale communication inter node
@@ -119,6 +118,10 @@ void LuosHAL_ComInit(uint32_t Baudrate)
 
     //Enable NVIC IRQ
 
+    //enable DMA
+#ifndef USE_TX_IT
+    //if DMA possible initialize DMA for a data transmission
+#endif
     //Timeout Initialization
     Timer_Prescaler = (MCUFREQ/Baudrate)/TIMERDIV;
     LuosHAL_TimeoutInit();
@@ -135,7 +138,7 @@ void LuosHAL_SetTxState(uint8_t Enable)
         //put Tx COM pin in push pull
         if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
         {
-            //Tx enable 
+            //Tx enable
         }
     }
     else
@@ -145,6 +148,15 @@ void LuosHAL_SetTxState(uint8_t Enable)
         {
             //Tx Disable
         }
+#ifdef USE_TX_IT
+        // Stop current transmit operation
+        data_size_to_transmit = 0;
+        //Disable IT tx empty
+#else
+
+        //stop DMA transmission DMA disable
+#endif
+        //disable tx complet IT
     }
 }
 /******************************************************************************
@@ -159,73 +171,96 @@ void LuosHAL_SetRxState(uint8_t Enable)
         //clear data register
         // Enable Rx com
         // Enable Rx IT
-        if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
-        {
-            //Rx enable
-        }
     }
     else
     {
         // disable Rx com
         // disable Rx IT
-        if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
-        {
-            //Rx Disable
-        }
     }
 }
 /******************************************************************************
- * @brief Process data receive
+ * @brief Process data send or receive
  * @param None
  * @return None
  ******************************************************************************/
-static inline void LuosHAL_ComReceive(void)
+void LUOS_COM_IRQHANDLER()
 {
+    // Reset timeout to it's default value
     LuosHAL_ResetTimeout();
 
-    //data receive IT
+    // reception management
+    //if IT receive and IT receive enable
+        //get data from register
+        ctx.rx.callback(&data); // send reception byte to state machine
+        if (data_size_to_transmit == 0)
+        {
+            //clear error IT
+            return;
+        }
+    //else if Framming error IT
+        ctx.rx.status.rx_framing_error = true;
 
-    //Framming error IT
+    // Transmission management
+    //if IT transmit complete and IT transmit complete enable
+        LuosHAL_SetRxState(true);
+        LuosHAL_SetTxState(false);
+        //diasble It tx complete
+
+#ifdef USE_TX_IT
+    //else if IT transmit empty and IT transmit empty enable
+        // Transmit buffer empty (this is a software DMA)
+        data_size_to_transmit--;
+        //put data to register
+        if (data_size_to_transmit == 0)
+        {
+            // Transmission complete, stop loading data and watch for the end of transmission
+            // Disable Transmission empty buffer interrupt
+            // Enable Transmission complete interrupt
+        }
+    }
+#endif
+    //clear error flag
 }
 /******************************************************************************
  * @brief Process data transmit
  * @param None
  * @return None
  ******************************************************************************/
-uint8_t LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
+void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
 {
-    for (uint16_t i = 0; i < size; i++)
+    //wait tx empty
+    LuosHAL_SetTxState(true);
+    // Reduce size by one because we send one directly
+    data_size_to_transmit = size - 1;
+    if (size > 1)
     {
-        ctx.tx.lock = true;
-        //ready to send
-        if (ctx.tx.collision)
-        {
-            // There is a collision
-            ctx.tx.collision = FALSE;
-            return 1;
-        }
-        //send data
-        LuosHAL_ResetTimeout();
+        // Start the data buffer transmission
+        // **** NO DMA
+        //Copy the data pointer globally alowing to keep it and run the transmission.
+        tx_data = data;
+#ifdef USE_TX_IT
+        //put data in register
+        //enable IT tx empty
+        //disable IT tx complete
+#else
+    data_size_to_transmit = 0;//Reset this value avoiding to check IT TC during collision
+    //set up DMA transfert
+    //enable IT tx complete
+#endif
     }
-    //disable IT timout
-    return 0;
-}
-/******************************************************************************
- * @brief Luos Tx communication complete
- * @param None
- * @return None
- ******************************************************************************/
-void LuosHAL_ComTxComplete(void)
-{
-    //while tx complete
-    LuosHAL_ResetTimeout();
+    else
+    {
+        // Transmit the only byte we have
+        //put data in register
+        // Enable Transmission complete interrupt because we only have one.
+    }
 }
 /******************************************************************************
  * @brief set state of Txlock detection pin
  * @param None
  * @return Lock status
  ******************************************************************************/
-void LuosHAL_SetTxLockDetecState(uint8_t Enable)
+void LuosHAL_SetRxDetecPin(uint8_t Enable)
 {
     if (TX_LOCK_DETECT_IRQ != DISABLE)
     {
@@ -236,7 +271,7 @@ void LuosHAL_SetTxLockDetecState(uint8_t Enable)
         }
         else
         {
-            ////clear flag
+            //set flag
         }
     }
 }
@@ -248,24 +283,25 @@ void LuosHAL_SetTxLockDetecState(uint8_t Enable)
 uint8_t LuosHAL_GetTxLockState(void)
 {
     uint8_t result = false;
-    
-    #ifdef USART_ISR_BUSY
-        //busy flag
-        LuosHAL_ResetTimeout();
+
+#ifdef USART_ISR_BUSY
+        //check busy flag
+        LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
         result = true;
-    #else
+#else
     if ((TX_LOCK_DETECT_PIN != DISABLE) && (TX_LOCK_DETECT_PORT != DISABLE))
     {
-        if(TX_LOCK_DETECT_IRQ == DISABLE)
+        //if pin low
+        result = true;
+        if (TX_LOCK_DETECT_IRQ == DISABLE)
         {
-            //result //
-            if(result == true)
+            if (result == true)
             {
-                LuosHAL_ResetTimeout();
+                LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
             }
         }
     }
-    #endif
+#endif
     return result;
 }
 /******************************************************************************
@@ -283,31 +319,29 @@ static void LuosHAL_TimeoutInit(void)
     //NVIC IT
 }
 /******************************************************************************
- * @brief Luos Timeout for Rx communication
+ * @brief Luos Timeout communication
  * @param None
  * @return None
  ******************************************************************************/
-static void LuosHAL_ResetTimeout(void)
+void LuosHAL_ResetTimeout(uint16_t nbrbit)
 {
-    //disable timer
     // clear NVIC IT pending
     // clear IT flag
     //reset counter Timer
     //relaod value counter
-    //enable IT
-    //enable timer
+    //if nbrbit != 0
+        //enable timer
 }
 /******************************************************************************
- * @brief Luos Timeout for Rx communication
+ * @brief Luos Timeout communication
  * @param None
  * @return None
  ******************************************************************************/
-static inline void LuosHAL_ComTimeout(void)
+void LUOS_TIMER_IRQHANDLER()
 {
-    //It timeout 
-    //clear IT
-    //stop timer
-        if (ctx.tx.lock == true)
+    //if It timeout
+        //clear IT
+        if ((ctx.tx.lock == true)&&(LuosHAL_GetTxLockState() == false))
         {
             Recep_Timeout();
         }
@@ -324,42 +358,50 @@ static void LuosHAL_GPIOInit(void)
 
     if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
     {
-        /*Configure GPIO pins : RxEN_Pin */
+        //Configure GPIO pins : RxEN_Pin
+        //output
+        //no pull
     }
 
     if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
     {
-        /*Configure GPIO pins : TxEN_Pin */
+        //Configure GPIO pins : TxEN_Pin
+        //output
+        //no pull
     }
 
-    /*Configure GPIO pins : TX_LOCK_DETECT_Pin */
-    if ((TX_LOCK_DETECT_PIN != DISABLE) || (TX_LOCK_DETECT_PORT != DISABLE))
-    {
-        if (TX_LOCK_DETECT_IRQ != DISABLE)
-        {
-            
-        }
-        
-    }
+    //Configure GPIO pin : TxPin
+    //ALTERNATE function USART Tx
+    //open drain
+    //pull up
 
-    /*Configure GPIO pin : TxPin */
-
-
-    /*Configure GPIO pin : RxPin */
-
+    //Configure GPIO pin : RxPin
+    //ALTERNATE function USART Rx
+    //open drain
+    //pull up
 
     //configure PTP
     LuosHAL_RegisterPTP();
     for (uint8_t i = 0; i < NBR_PORT; i++) /*Configure GPIO pins : PTP_Pin */
     {
+        //IT falling
+        // pull down
         // Setup PTP lines
         LuosHAL_SetPTPDefaultState(i);
         //activate NVIC IT for PTP
     }
 
-    if (TX_LOCK_DETECT_IRQ != DISABLE)
+    /*Configure GPIO pins : TX_LOCK_DETECT_Pin */
+    if ((TX_LOCK_DETECT_PIN != DISABLE) || (TX_LOCK_DETECT_PORT != DISABLE))
     {
-        //activate NVIC IT for Tx detect
+        //pull up
+        //input
+        if (TX_LOCK_DETECT_IRQ != DISABLE)
+        {
+            //it falling
+            //NVIC enable
+        }
+
     }
 }
 /******************************************************************************
@@ -398,10 +440,10 @@ static void LuosHAL_RegisterPTP(void)
  * @param GPIO IT line
  * @return None
  ******************************************************************************/
-static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
+void PINOUT_IRQHANDLER(uint16_t GPIO_Pin)
 {
     ////Process for Tx Lock Detec
-    if (GPIO == TX_LOCK_DETECT_PIN)
+    if (GPIO_Pin == TX_LOCK_DETECT_PIN)
     {
         ctx.tx.lock = true;
         //clear flag
@@ -410,7 +452,7 @@ static inline void LuosHAL_GPIOProcess(uint16_t GPIO)
     {
         for (uint8_t i = 0; i < NBR_PORT; i++)
         {
-            if (GPIO == PTP[i].Pin)
+            if (GPIO_Pin == PTP[i].Pin)
             {
                 PortMng_PtpHandler(i);
                 break;
@@ -528,7 +570,7 @@ void LuosHAL_FlashWriteLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *dat
 
     // and copy it into flash
 
-    //write data 
+    //write data
 
 /******************************************************************************
  * @brief read information from page where Luos keep permanente information
@@ -538,18 +580,4 @@ void LuosHAL_FlashWriteLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *dat
 void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data)
 {
     memcpy(data, (void *)(addr), size);
-}
-
-/////////////////////////Special LuosHAL function///////////////////////////
-void PINOUT_IRQHANDLER(uint16_t GPIO_Pin)
-{
-    LuosHAL_GPIOProcess(GPIO_Pin);
-}
-void LUOS_COM_IRQHANDLER()
-{
-    LuosHAL_ComReceive();
-}
-void LUOS_TIMER_IRQHANDLER()
-{
-    LuosHAL_ComTimeout();
 }

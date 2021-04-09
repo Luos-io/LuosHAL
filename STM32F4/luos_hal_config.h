@@ -12,6 +12,9 @@
 
 #include "stm32f4xx_hal.h"
 
+//If your MCU do not Have DMA for tx transmit define USE_TX_IT
+//If your MCU have CRC polynome 16 #define USE_CRC_HW
+
 #define DISABLE 0x00
 
 #ifndef MCUFREQ
@@ -117,6 +120,24 @@
 #endif
 #ifndef LUOS_COM_IRQHANDLER
 #define LUOS_COM_IRQHANDLER() USART1_IRQHandler()
+#endif
+/*******************************************************************************
+ * FLASH CONFIG
+ ******************************************************************************/
+#ifndef LUOS_DMA_CLOCK_ENABLE
+#define LUOS_DMA_CLOCK_ENABLE()     __HAL_RCC_DMA2_CLK_ENABLE();
+#endif
+#ifndef LUOS_DMA
+#define LUOS_DMA                    DMA2
+#endif
+#ifndef LUOS_DMA_STREAM
+#define LUOS_DMA_STREAM             LL_DMA_STREAM_7
+#endif
+#ifndef LUOS_DMA_CHANNEL
+#define LUOS_DMA_CHANNEL            LL_DMA_CHANNEL_4
+#endif
+#ifndef LUOS_DMA_REMAP
+#define LUOS_DMA_REMAP              0
 #endif
 /*******************************************************************************
  * COM TIMEOUT CONFIG

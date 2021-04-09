@@ -13,6 +13,8 @@
 #include <board_config.h>
 #include <Arduino.h>
 
+//If your MCU do not Have DMA for tx transmit define USE_TX_IT
+
 #define DISABLE 0x00
 
 #ifndef MCUFREQ
@@ -130,6 +132,25 @@
 #endif
 #ifndef LUOS_COM_IRQHANDLER
 #define LUOS_COM_IRQHANDLER() SERCOM0_Handler()
+#endif
+/*******************************************************************************
+ * DMA CONFIG
+ ******************************************************************************/
+#ifndef LUOS_DMA_CLOCK_ENABLE
+#define LUOS_DMA_CLOCK_ENABLE()                                                                             \
+  do                                                                                                        \
+  {                                                                                                         \
+    PM->APBCMASK.reg |= PM_AHBMASK_DMAC;                                                        \
+  } while (0U)
+#endif
+#ifndef LUOS_DMA
+#define LUOS_DMA DMAC
+#endif
+#ifndef LUOS_DMA_TRIGGER
+#define LUOS_DMA_TRIGGER    2
+#endif
+#ifndef LUOS_DMA_CHANNEL
+#define LUOS_DMA_CHANNEL    0
 #endif
 /*******************************************************************************
  * COM TIMEOUT CONFIG
