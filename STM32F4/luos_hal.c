@@ -209,12 +209,10 @@ void LuosHAL_SetRxState(uint8_t Enable)
     if (Enable == true)
     {
         LL_USART_ReceiveData8(LUOS_COM);//empty buffer
-        LL_USART_EnableDirectionRx(LUOS_COM);  // Enable Rx com
         LL_USART_EnableIT_RXNE(LUOS_COM);      // Enable Rx IT
     }
     else
     {
-        LL_USART_DisableDirectionRx(LUOS_COM); // Disable Rx com
         LL_USART_DisableIT_RXNE(LUOS_COM);     // Disable Rx IT
     }
 }
@@ -250,8 +248,8 @@ void LUOS_COM_IRQHANDLER()
     {
         // Transmission complete
         // Switch to reception mode
-        LuosHAL_SetRxState(true);
         LuosHAL_SetTxState(false);
+        LuosHAL_SetRxState(true);
         // Disable transmission complete IRQ
         LL_USART_ClearFlag_TC(LUOS_COM);
         LL_USART_DisableIT_TC(LUOS_COM);
@@ -437,8 +435,8 @@ void LUOS_TIMER_IRQHANDLER()
         if ((ctx.tx.lock == true)&&(LuosHAL_GetTxLockState() == false))
         {
             // Enable RX detection pin if needed
-            LuosHAL_SetRxState(true);
             LuosHAL_SetTxState(false);
+            LuosHAL_SetRxState(true);
             Recep_Timeout();
         }
     }
