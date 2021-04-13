@@ -140,7 +140,7 @@
 #define LUOS_DMA_CLOCK_ENABLE()                                                                             \
   do                                                                                                        \
   {                                                                                                         \
-    PM->APBCMASK.reg |= PM_AHBMASK_DMAC;                                                        \
+    PM->APBCMASK.reg |= PM_AHBMASK_DMAC;                                                                    \
   } while (0U)
 #endif
 #ifndef LUOS_DMA

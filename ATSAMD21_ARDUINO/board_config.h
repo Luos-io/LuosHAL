@@ -20,9 +20,12 @@
       (uint16_t)(GCLK_CLKCTRL_ID(GCLK_CLKCTRL_ID_SERCOM0_CORE_Val) | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN);  \
       PM->APBCMASK.reg |= PM_APBCMASK_SERCOM0;                                                                      \
     } while (0U)
-  #define LUOS_COM SERCOM0
-  #define LUOS_COM_IRQ SERCOM0_IRQn
-  #define LUOS_COM_IRQHANDLER() SERCOM0_Handler()
+    #define LUOS_COM SERCOM0
+    #define LUOS_COM_IRQ SERCOM0_IRQn
+    #define LUOS_COM_IRQHANDLER() SERCOM0_Handler()
+    #define LUOS_DMA_TRIGGER    2
+    #define COM_TX_POS 1 //PAD2
+    #define COM_RX_POS 3 //PAD3
 #endif
 
 #if (defined(ARDUINO_SAMD_MKR1000) || defined(ARDUINO_SAMD_MKRWIFI1010) || defined(ARDUINO_SAMD_MKRFox1200)         \
@@ -36,9 +39,12 @@
       (uint16_t)(GCLK_CLKCTRL_ID(GCLK_CLKCTRL_ID_SERCOM5_CORE_Val) | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN);  \
       PM->APBCMASK.reg |= PM_APBCMASK_SERCOM5;                                                                      \
     } while (0U)
-  #define LUOS_COM SERCOM5
-  #define LUOS_COM_IRQ SERCOM5_IRQn
-  #define LUOS_COM_IRQHANDLER() SERCOM5_Handler()
+    #define LUOS_COM SERCOM5
+    #define LUOS_COM_IRQ SERCOM5_IRQn
+    #define LUOS_COM_IRQHANDLER() SERCOM5_Handler()
+    #define LUOS_DMA_TRIGGER    12
+    #define COM_TX_POS 1
+    #define COM_RX_POS 3 //PAD3
 #endif
 
 #endif /* _BOARD_CONFIG_H_ */
