@@ -220,12 +220,10 @@ void LuosHAL_SetRxState(uint8_t Enable)
     if (Enable == true)
     {
         LUOS_COM->USART.DATA.reg;
-        LUOS_COM->USART.CTRLB.reg  |= SERCOM_USART_CTRLB_RXEN;
         LUOS_COM->USART.INTENSET.reg = SERCOM_USART_INTENSET_RXC;
     }
     else
     {
-        LUOS_COM->USART.CTRLB.reg &= ~SERCOM_USART_CTRLB_RXEN;
         LUOS_COM->USART.INTENCLR.reg = SERCOM_USART_INTENCLR_RXC;
     }
 }
@@ -265,8 +263,8 @@ void LUOS_COM_IRQHANDLER()
     {
         // Transmission complete
         // Switch to reception mode
-        LuosHAL_SetRxState(true);
         LuosHAL_SetTxState(false);
+        LuosHAL_SetRxState(true);
         // Disable transmission complete IRQ
         LUOS_COM->USART.INTFLAG.reg = SERCOM_USART_INTFLAG_TXC;//clear flag
         LUOS_COM->USART.INTENCLR.reg = SERCOM_USART_INTENCLR_TXC;//disable IT
@@ -442,8 +440,8 @@ void LUOS_TIMER_IRQHANDLER()
         LUOS_TIMER->COUNT16.INTFLAG.bit.OVF = 1;
         if ((ctx.tx.lock == true)&&(LuosHAL_GetTxLockState() == false))
         {
-            LuosHAL_SetRxState(true);
             LuosHAL_SetTxState(false);
+            LuosHAL_SetRxState(true);
             Recep_Timeout();
         }
     }
