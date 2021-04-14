@@ -230,12 +230,10 @@ void LuosHAL_SetRxState(uint8_t Enable)
     if (Enable == true)
     {
         LUOS_COM->USART_INT.SERCOM_DATA;//clear data buffer
-        LUOS_COM->USART_INT.SERCOM_CTRLB |= SERCOM_USART_INT_CTRLB_RXEN_Msk;
         LUOS_COM->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_RXC_Msk;
     }
     else
     {
-        LUOS_COM->USART_INT.SERCOM_CTRLB &= ~SERCOM_USART_INT_CTRLB_RXEN_Msk;
         LUOS_COM->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_RXC_Msk;
     }
 }
@@ -274,8 +272,8 @@ void LUOS_COM_IRQHANDLER()
     {
         // Transmission complete
         // Switch to reception mode
-        LuosHAL_SetRxState(true);
         LuosHAL_SetTxState(false);
+        LuosHAL_SetRxState(true);
         // Disable transmission complete IRQ
         LUOS_COM->USART_INT.SERCOM_INTFLAG = SERCOM_USART_INT_INTFLAG_TXC_Msk;//clear flag
         LUOS_COM->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_TXC_Msk;//disable IT
@@ -452,8 +450,8 @@ void LUOS_TIMER_IRQHANDLER()
         LUOS_TIMER->COUNT16.TC_INTFLAG = TC_INTFLAG_OVF_Msk;//clear
         if ((ctx.tx.lock == true)&&(LuosHAL_GetTxLockState() == false))
         {
-            LuosHAL_SetRxState(true);
             LuosHAL_SetTxState(false);
+            LuosHAL_SetRxState(true);
             Recep_Timeout();
         }
     }
