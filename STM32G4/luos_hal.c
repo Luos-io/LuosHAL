@@ -25,7 +25,7 @@
  * Definitions
  ******************************************************************************/
 #define DEFAULT_TIMEOUT 20
-
+#define TIMEOUT_ACK DEFAULT_TIMEOUT/4
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -182,7 +182,6 @@ void LuosHAL_SetTxState(uint8_t Enable)
     else
     {
         // Put Tx in open drain
-        LL_USART_RequestTxDataFlush(LUOS_COM);
         LL_GPIO_SetPinOutputType(COM_TX_PORT, COM_TX_PIN, LL_GPIO_OUTPUT_OPENDRAIN);
         if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
         {
@@ -284,8 +283,6 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     while (LL_USART_IsActiveFlag_TXE(LUOS_COM) == RESET)
         ;
     // Disable RX detec pin if needed
-    // Enable TX
-    LuosHAL_SetTxState(true);
 
     // Reduce size by one because we send one directly
     data_size_to_transmit = size - 1;
@@ -312,6 +309,8 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     LL_DMA_SetDataLength(LUOS_DMA, LUOS_DMA_CHANNEL, size);
     // set request DMA
     LL_USART_EnableDMAReq_TX(LUOS_COM);
+    // Enable TX
+    LuosHAL_SetTxState(true);
     // Enable DMA again
     LL_DMA_EnableChannel(LUOS_DMA, LUOS_DMA_CHANNEL);
     // enable transmit complete
@@ -320,6 +319,10 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     }
     else
     {
+        //wait before send ack
+        while(LL_TIM_GetCounter(LUOS_TIMER) < TIMEOUT_ACK);//this is a patch du to difference MCU frequency
+        // Enable TX
+        LuosHAL_SetTxState(true);
         // Transmit the only byte we have
         LL_USART_TransmitData8(LUOS_COM, *data);
         // Enable Transmission complete interrupt because we only have one.
