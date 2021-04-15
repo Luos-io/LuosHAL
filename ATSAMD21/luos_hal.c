@@ -19,7 +19,7 @@
  * Definitions
  ******************************************************************************/
 #define DEFAULT_TIMEOUT 20
-
+#define TIMEOUT_ACK DEFAULT_TIMEOUT/4
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -309,8 +309,6 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
 {
     while ((LUOS_COM->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) != SERCOM_USART_INT_INTFLAG_DRE_Msk);
     // Disable RX detec pin if needed
-    // Enable TX
-    LuosHAL_SetTxState(true);
 
     // Reduce size by one because we send one directly
     data_size_to_transmit = size - 1;
@@ -332,12 +330,18 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     descriptor_section.DMAC_SRCADDR = (uint32_t)(data+size);
     descriptor_section.DMAC_DSTADDR = (uint32_t)&LUOS_COM->USART_INT.SERCOM_DATA;
     descriptor_section.DMAC_BTCNT = size;
+        // Enable TX
+    LuosHAL_SetTxState(true);
     LUOS_DMA->DMAC_CHCTRLA |= DMAC_CHCTRLA_ENABLE_Msk;
     LUOS_COM->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_TXC_Msk;//enable IT
 #endif
     }
     else
     {
+        //wait before send ack
+        while(LUOS_TIMER->COUNT16.TC_COUNT < (0xFFFF - (timoutclockcnt*(DEFAULT_TIMEOUT - TIMEOUT_ACK))));//this is a patch du to difference MCU frequency
+        // Enable TX
+        LuosHAL_SetTxState(true);
         // Transmit the only byte we have
         LUOS_COM->USART_INT.SERCOM_DATA = *data;
         // Enable Transmission complete interrupt because we only have one.
