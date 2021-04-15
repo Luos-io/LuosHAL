@@ -24,6 +24,7 @@
  * Definitions
  ******************************************************************************/
 #define DEFAULT_TIMEOUT 20
+#define TIMEOUT_ACK DEFAULT_TIMEOUT/4
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -282,8 +283,6 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     while (LL_USART_IsActiveFlag_TXE(LUOS_COM) == RESET)
         ;
     // Disable RX detec pin if needed
-    // Enable TX
-    LuosHAL_SetTxState(true);
 
     // Reduce size by one because we send one directly
     data_size_to_transmit = size - 1;
@@ -313,6 +312,8 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     //clear flag shity way must be change
     LUOS_DMA->HIFCR = 0xFFFFFFFF;
     LUOS_DMA->LIFCR = 0xFFFFFFFF;
+        // Enable TX
+    LuosHAL_SetTxState(true);
     // Enable DMA again
     LL_DMA_EnableStream(LUOS_DMA, LUOS_DMA_STREAM);
     // enable transmit complete
@@ -321,6 +322,10 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     }
     else
     {
+        //wait before send ack
+        while(LL_TIM_GetCounter(LUOS_TIMER) < TIMEOUT_ACK);//this is a patch du to difference MCU frequency
+            // Enable TX
+        LuosHAL_SetTxState(true);
         // Transmit the only byte we have
         LL_USART_TransmitData8(LUOS_COM, *data);
         // Enable Transmission complete interrupt because we only have one.
