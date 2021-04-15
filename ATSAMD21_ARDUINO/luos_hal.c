@@ -19,7 +19,7 @@
  * Definitions
  ******************************************************************************/
 #define DEFAULT_TIMEOUT 20
-
+#define TIMEOUT_ACK DEFAULT_TIMEOUT/4
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -39,8 +39,8 @@ volatile uint16_t data_size_to_transmit = 0;
 volatile uint8_t *tx_data = 0;
 
 #ifndef USE_TX_IT
-static  DmacDescriptor write_back_section;
-static  DmacDescriptor descriptor_section;
+static  DmacDescriptor write_back_section __attribute__((aligned(8)));
+static  DmacDescriptor descriptor_section __attribute__((aligned(8)));
 #endif
 /*******************************************************************************
  * Function
@@ -299,10 +299,8 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
 {
     while ((LUOS_COM->USART.INTFLAG.reg & SERCOM_USART_INTFLAG_DRE) != SERCOM_USART_INTFLAG_DRE);
     // Disable RX detec pin if needed
-    // Enable TX
-    LuosHAL_SetTxState(true);
 
-        // Reduce size by one because we send one directly
+    // Reduce size by one because we send one directly
     data_size_to_transmit = size - 1;
     if (size > 1)
     {
@@ -322,12 +320,18 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     descriptor_section.SRCADDR.reg = (uint32_t)(data+size);
     descriptor_section.DSTADDR.reg = (uint32_t)&LUOS_COM->USART.DATA.reg;
     descriptor_section.BTCNT.reg = size;
+    // Enable TX
+    LuosHAL_SetTxState(true);
     LUOS_DMA->CHCTRLA.reg |= DMAC_CHCTRLA_ENABLE;
     LUOS_COM->USART.INTENSET.reg = SERCOM_USART_INTENSET_TXC;//enable IT
 #endif
     }
     else
     {
+        //wait before send ack
+        while(LUOS_TIMER->COUNT16.COUNT.reg < (0xFFFF - (timoutclockcnt*(DEFAULT_TIMEOUT - TIMEOUT_ACK))));//this is a patch du to difference MCU frequency
+        // Enable TX
+        LuosHAL_SetTxState(true);
         // Transmit the only byte we have
         LUOS_COM->USART.DATA.reg = *data;
         // Enable Transmission complete interrupt because we only have one.
