@@ -358,14 +358,14 @@ void LuosHAL_SetRxDetecPin(uint8_t Enable)
 {
     if (TX_LOCK_DETECT_IRQ != DISABLE)
     {
-        EIC_REGS->EIC_INTFLAG = (1 << TX_LOCK_DETECT_PIN); //clear IT flag
+        EIC_REGS->EIC_INTFLAG = (1 << TX_LOCK_DETECT_IRQ); //clear IT flag
         if (Enable == true)
         {
-            EIC_REGS->EIC_INTENSET = (1 << TX_LOCK_DETECT_PIN);// enable IT
+            EIC_REGS->EIC_INTENSET = (1 << TX_LOCK_DETECT_IRQ);// enable IT
         }
         else
         {
-            EIC_REGS->EIC_INTENCLR = (1 << TX_LOCK_DETECT_PIN);
+            EIC_REGS->EIC_INTENCLR = (1 << TX_LOCK_DETECT_IRQ);
         }
     }
 }
@@ -566,13 +566,13 @@ static void LuosHAL_RegisterPTP(void)
 #if (NBR_PORT >= 3)
     PTP[2].Pin = PTPC_PIN;
     PTP[2].Port = PTPC_PORT;
-    PTP[2].Port = PTPC_PORT;
+    PTP[2].Irq = PTPC_PORT;
 #endif
 
 #if (NBR_PORT >= 4)
     PTP[3].Pin = PTPD_PIN;
     PTP[3].Port = PTPD_PORT;
-    PTP[3].Port = PTPD_PORT;
+    PTP[3].Irq = PTPD_PORT;
 #endif
 }
 /******************************************************************************
@@ -584,21 +584,21 @@ void PINOUT_IRQHANDLER()
 {
     uint32_t FlagIT = 0;
     ////Process for Tx Lock Detec
-    if (((EIC_REGS->EIC_INTFLAG & (1 << TX_LOCK_DETECT_PIN)))&&(TX_LOCK_DETECT_IRQ == DISABLE))
+    if (((EIC_REGS->EIC_INTFLAG & (1 << TX_LOCK_DETECT_IRQ)))&&(TX_LOCK_DETECT_IRQ != DISABLE))
     {
         ctx.tx.lock = true;
         LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
-        EIC_REGS->EIC_INTFLAG = (uint32_t)(1 << TX_LOCK_DETECT_PIN);
-        EIC_REGS->EIC_INTENCLR = (1 << TX_LOCK_DETECT_PIN);
+        EIC_REGS->EIC_INTFLAG = (uint32_t)(1 << TX_LOCK_DETECT_IRQ);
+        EIC_REGS->EIC_INTENCLR = (1 << TX_LOCK_DETECT_IRQ);
     }
     else
     {
         for (uint8_t i = 0; i < NBR_PORT; i++)
         {
-            FlagIT = (EIC_REGS->EIC_INTFLAG & (1 << PTP[i].Pin));
+            FlagIT = (EIC_REGS->EIC_INTFLAG & (1 << PTP[i].Irq));
             if (FlagIT)
             {
-                EIC_REGS->EIC_INTFLAG = (uint32_t)(1 << PTP[i].Pin);
+                EIC_REGS->EIC_INTFLAG = (uint32_t)(1 << PTP[i].Irq);
                 PortMng_PtpHandler(i);
                 break;
             }
