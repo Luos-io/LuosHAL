@@ -251,7 +251,6 @@ void LUOS_COM_IRQHANDLER()
             return;
         }
     }
-
     else if((LUOS_COM->USART.STATUS.reg & SERCOM_USART_STATUS_FERR) == SERCOM_USART_STATUS_FERR)  // check error on ligne
     {
             ctx.rx.status.rx_framing_error = true;
@@ -316,14 +315,14 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
         // Disable Transmission complete interrupt
         LUOS_COM->USART.INTENCLR.reg = SERCOM_USART_INTENCLR_TXC;//disable IT
 #else
-    data_size_to_transmit = 0;//to not check IT TC during collision
-    descriptor_section.SRCADDR.reg = (uint32_t)(data+size);
-    descriptor_section.DSTADDR.reg = (uint32_t)&LUOS_COM->USART.DATA.reg;
-    descriptor_section.BTCNT.reg = size;
-    // Enable TX
-    LuosHAL_SetTxState(true);
-    LUOS_DMA->CHCTRLA.reg |= DMAC_CHCTRLA_ENABLE;
-    LUOS_COM->USART.INTENSET.reg = SERCOM_USART_INTENSET_TXC;//enable IT
+        data_size_to_transmit = 0;//to not check IT TC during collision
+        descriptor_section.SRCADDR.reg = (uint32_t)(data+size);
+        descriptor_section.DSTADDR.reg = (uint32_t)&LUOS_COM->USART.DATA.reg;
+        descriptor_section.BTCNT.reg = size;
+        // Enable TX
+        LuosHAL_SetTxState(true);
+        LUOS_DMA->CHCTRLA.reg |= DMAC_CHCTRLA_ENABLE;
+        LUOS_COM->USART.INTENSET.reg = SERCOM_USART_INTENSET_TXC;//enable IT
 #endif
     }
     else
@@ -348,14 +347,14 @@ void LuosHAL_SetRxDetecPin(uint8_t Enable)
 {
     if (TX_LOCK_DETECT_IRQ != DISABLE)
     {
-        EIC->INTFLAG.reg = (1 << TX_LOCK_DETECT_PIN); //clear IT flag
+        EIC->INTFLAG.reg = (1 << TX_LOCK_DETECT_IRQ); //clear IT flag
         if (Enable == true)
         {
-            EIC->INTENSET.reg = (1 << TX_LOCK_DETECT_PIN);// enable IT
+            EIC->INTENSET.reg = (1 << TX_LOCK_DETECT_IRQ);// enable IT
         }
         else
         {
-            EIC->INTENCLR.reg = (1 << TX_LOCK_DETECT_PIN);
+            EIC->INTENCLR.reg = (1 << TX_LOCK_DETECT_IRQ);
         }
     }
 }
@@ -556,13 +555,13 @@ static void LuosHAL_RegisterPTP(void)
 #if (NBR_PORT >= 3)
     PTP[2].Pin = PTPC_PIN;
     PTP[2].Port = PTPC_PORT;
-    PTP[2].Port = PTPC_PORT;
+    PTP[2].Irq = PTPC_PORT;
 #endif
 
 #if (NBR_PORT >= 4)
     PTP[3].Pin = PTPD_PIN;
     PTP[3].Port = PTPD_PORT;
-    PTP[3].Port = PTPD_PORT;
+    PTP[3].Irq = PTPD_PORT;
 #endif
 }
 /******************************************************************************
@@ -574,21 +573,21 @@ void PINOUT_IRQHANDLER()
 {
     uint32_t FlagIT = 0;
     ////Process for Tx Lock Detec
-    if (((EIC->INTFLAG.reg & (1 << TX_LOCK_DETECT_PIN)))&&(TX_LOCK_DETECT_IRQ != DISABLE))
+    if (((EIC->INTFLAG.reg & (1 << TX_LOCK_DETECT_IRQ)))&&(TX_LOCK_DETECT_IRQ != DISABLE))
     {
         ctx.tx.lock = true;
         LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
-        EIC->INTFLAG.reg = (uint32_t)(1 << TX_LOCK_DETECT_PIN);
-        EIC->INTENCLR.reg = (1 << TX_LOCK_DETECT_PIN);
+        EIC->INTFLAG.reg = (uint32_t)(1 << TX_LOCK_DETECT_IRQ);
+        EIC->INTENCLR.reg = (1 << TX_LOCK_DETECT_IRQ);
     }
     else
     {
         for (uint8_t i = 0; i < NBR_PORT; i++)
         {
-            FlagIT = (EIC->INTFLAG.reg& (1 << PTP[i].Pin));
+            FlagIT = (EIC->INTFLAG.reg & (1 << PTP[i].Irq));
             if (FlagIT)
             {
-                EIC->INTFLAG.reg = (uint32_t)(1 << PTP[i].Pin);
+                EIC->INTFLAG.reg = (uint32_t)(1 << PTP[i].Irq);
                 PortMng_PtpHandler(i);
                 break;
             }
