@@ -29,7 +29,7 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-#ifdef USE_CRC_HW
+#if (USE_CRC_HW == 1)
 CRC_HandleTypeDef hcrc;
 #endif
 GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -637,7 +637,7 @@ uint8_t LuosHAL_GetPTPState(uint8_t PTPNbr)
  ******************************************************************************/
 static void LuosHAL_CRCInit(void)
 {
-#ifdef USE_CRC_HW
+#if (USE_CRC_HW == 1)
     __HAL_RCC_CRC_CLK_ENABLE();
     hcrc.Instance = CRC;
     hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_DISABLE;
@@ -661,7 +661,7 @@ static void LuosHAL_CRCInit(void)
  ******************************************************************************/
 void LuosHAL_ComputeCRC(uint8_t *data, uint8_t *crc)
 {
-#ifdef USE_CRC_HW
+#if (USE_CRC_HW == 1)
     hcrc.Instance->INIT = *(uint16_t *)crc;
     __HAL_CRC_DR_RESET(&hcrc);
     *(uint16_t *)crc = (uint16_t)HAL_CRC_Accumulate(&hcrc, (uint32_t *)data, 1);
