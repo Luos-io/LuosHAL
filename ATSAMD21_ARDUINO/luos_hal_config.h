@@ -13,9 +13,13 @@
 #include <board_config.h>
 #include <Arduino.h>
 
-//If your MCU do not Have DMA for tx transmit define USE_TX_IT
-
 #define DISABLE 0x00
+
+//If your MCU do not Have DMA for tx transmit #define USE_TX_IT
+//If your MCU have CRC polynome 16 #define USE_CRC_HW 1 else #define USE_CRC_HW 0
+#ifndef USE_CRC_HW
+#define USE_CRC_HW 0
+#endif
 
 #ifndef MCUFREQ
 #define MCUFREQ 48000000 //MCU frequence
@@ -27,13 +31,12 @@
  * PINOUT CONFIG
  ******************************************************************************/
 #ifndef PORT_CLOCK_ENABLE
-#define PORT_CLOCK_ENABLE()                                                                               \
-  do                                                                                                      \
-  {                                                                                                       \
-    GCLK->CLKCTRL.reg =                                                                                   \
-    (uint16_t)(GCLK_CLKCTRL_ID(GCLK_CLKCTRL_ID_EIC_Val) | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN);   \
-    PM->APBAMASK.reg |= PM_APBAMASK_EIC;                                                                  \
-  } while (0U)
+#define PORT_CLOCK_ENABLE()                                                                                                     \
+    do                                                                                                                          \
+    {                                                                                                                           \
+        GCLK->CLKCTRL.reg = (uint16_t)(GCLK_CLKCTRL_ID(GCLK_CLKCTRL_ID_EIC_Val) | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN); \
+        PM->APBAMASK.reg |= PM_APBAMASK_EIC;                                                                                    \
+    } while (0U)
 #endif
 
 //PTP pin definition
@@ -44,7 +47,7 @@
 #define PTPA_PORT g_APinDescription[5].ulPort
 #endif
 #ifndef PTPA_IRQ
-#define PTPA_IRQ  g_APinDescription[5].ulExtInt //see EXTINT
+#define PTPA_IRQ g_APinDescription[5].ulExtInt //see EXTINT
 #endif
 
 #ifndef PTPB_PIN
@@ -54,7 +57,7 @@
 #define PTPB_PORT g_APinDescription[6].ulPort
 #endif
 #ifndef PTPB_IRQ
-#define PTPB_IRQ  g_APinDescription[6].ulExtInt  //see EXTINT
+#define PTPB_IRQ g_APinDescription[6].ulExtInt //see EXTINT
 #endif
 
 //COM pin definition
@@ -116,13 +119,12 @@
  * COM CONFIG
  ******************************************************************************/
 #ifndef LUOS_COM_CLOCK_ENABLE
-#define LUOS_COM_CLOCK_ENABLE()                                                                                   \
-  do                                                                                                              \
-  {                                                                                                               \
-    GCLK->CLKCTRL.reg =                                                                                           \
-    (uint16_t)(GCLK_CLKCTRL_ID(GCLK_CLKCTRL_ID_SERCOM0_CORE_Val) | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN);  \
-    PM->APBCMASK.reg |= PM_APBCMASK_SERCOM0;                                                                      \
-  } while (0U)
+#define LUOS_COM_CLOCK_ENABLE()                                                                                                          \
+    do                                                                                                                                   \
+    {                                                                                                                                    \
+        GCLK->CLKCTRL.reg = (uint16_t)(GCLK_CLKCTRL_ID(GCLK_CLKCTRL_ID_SERCOM0_CORE_Val) | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN); \
+        PM->APBCMASK.reg |= PM_APBCMASK_SERCOM0;                                                                                         \
+    } while (0U)
 #endif
 #ifndef LUOS_COM
 #define LUOS_COM SERCOM0
@@ -137,32 +139,31 @@
  * DMA CONFIG
  ******************************************************************************/
 #ifndef LUOS_DMA_CLOCK_ENABLE
-#define LUOS_DMA_CLOCK_ENABLE()                                                                             \
-  do                                                                                                        \
-  {                                                                                                         \
-    PM->APBCMASK.reg |= PM_AHBMASK_DMAC;                                                        \
-  } while (0U)
+#define LUOS_DMA_CLOCK_ENABLE()              \
+    do                                       \
+    {                                        \
+        PM->APBCMASK.reg |= PM_AHBMASK_DMAC; \
+    } while (0U)
 #endif
 #ifndef LUOS_DMA
 #define LUOS_DMA DMAC
 #endif
 #ifndef LUOS_DMA_TRIGGER
-#define LUOS_DMA_TRIGGER    2
+#define LUOS_DMA_TRIGGER 2
 #endif
 #ifndef LUOS_DMA_CHANNEL
-#define LUOS_DMA_CHANNEL    0
+#define LUOS_DMA_CHANNEL 0
 #endif
 /*******************************************************************************
  * COM TIMEOUT CONFIG
  ******************************************************************************/
 #ifndef LUOS_TIMER_LOCK_ENABLE
-#define LUOS_TIMER_LOCK_ENABLE()                                                                              \
-  do                                                                                                          \
-  {                                                                                                           \
-    GCLK->CLKCTRL.reg =                                                                                       \
-    (uint16_t)(GCLK_CLKCTRL_ID(GCLK_CLKCTRL_ID_TCC2_TC3_Val) | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN);  \
-    PM->APBCMASK.reg |= PM_APBCMASK_TC3;                                                                      \
-  } while (0U)
+#define LUOS_TIMER_LOCK_ENABLE()                                                                                                     \
+    do                                                                                                                               \
+    {                                                                                                                                \
+        GCLK->CLKCTRL.reg = (uint16_t)(GCLK_CLKCTRL_ID(GCLK_CLKCTRL_ID_TCC2_TC3_Val) | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN); \
+        PM->APBCMASK.reg |= PM_APBCMASK_TC3;                                                                                         \
+    } while (0U)
 #endif
 #ifndef LUOS_TIMER
 #define LUOS_TIMER TC3

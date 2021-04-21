@@ -11,7 +11,7 @@
 #define _BOARD_CONFIG_H_
 
 #include <Arduino.h>
-
+// clang-format off
 #if defined(ARDUINO_SAMD_ZERO)
   #define LUOS_COM_CLOCK_ENABLE()                                                                                   \
     do                                                                                                              \
@@ -20,9 +20,10 @@
       (uint16_t)(GCLK_CLKCTRL_ID(GCLK_CLKCTRL_ID_SERCOM0_CORE_Val) | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN);  \
       PM->APBCMASK.reg |= PM_APBCMASK_SERCOM0;                                                                      \
     } while (0U)
-  #define LUOS_COM SERCOM0
-  #define LUOS_COM_IRQ SERCOM0_IRQn
-  #define LUOS_COM_IRQHANDLER() SERCOM0_Handler()
+    #define LUOS_COM SERCOM0
+    #define LUOS_COM_IRQ SERCOM0_IRQn
+    #define LUOS_COM_IRQHANDLER() SERCOM0_Handler()
+    #define LUOS_DMA_TRIGGER    2
 #endif
 
 #if (defined(ARDUINO_SAMD_MKR1000) || defined(ARDUINO_SAMD_MKRWIFI1010) || defined(ARDUINO_SAMD_MKRFox1200)         \
@@ -36,9 +37,22 @@
       (uint16_t)(GCLK_CLKCTRL_ID(GCLK_CLKCTRL_ID_SERCOM5_CORE_Val) | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN);  \
       PM->APBCMASK.reg |= PM_APBCMASK_SERCOM5;                                                                      \
     } while (0U)
-  #define LUOS_COM SERCOM5
-  #define LUOS_COM_IRQ SERCOM5_IRQn
-  #define LUOS_COM_IRQHANDLER() SERCOM5_Handler()
+    #define LUOS_COM SERCOM5
+    #define LUOS_COM_IRQ SERCOM5_IRQn
+    #define LUOS_COM_IRQHANDLER() SERCOM5_Handler()
+    #define LUOS_DMA_TRIGGER    12
+
+    #define RX_EN_PIN g_APinDescription[0].ulPin
+    #define RX_EN_PORT g_APinDescription[0].ulPort
+    #define TX_EN_PIN g_APinDescription[1].ulPin
+    #define TX_EN_PORT g_APinDescription[1].ulPort
+
+    #define PTPB_PIN g_APinDescription[4].ulPin
+    #define PTPB_PORT g_APinDescription[4].ulPort
+    #define PTPB_IRQ  g_APinDescription[4].ulExtInt  //see EXTINT
+
 #endif
+
+
 
 #endif /* _BOARD_CONFIG_H_ */

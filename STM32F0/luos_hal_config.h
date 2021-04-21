@@ -12,10 +12,13 @@
 
 #include "stm32f0xx_hal.h"
 
-//If your MCU do not Have DMA for tx transmit define USE_TX_IT
-#define USE_CRC_HW
-
 #define DISABLE 0x00
+
+//If your MCU do not Have DMA for tx transmit define USE_TX_IT
+//If your MCU have CRC polynome 16 #define USE_CRC_HW 1 else #define USE_CRC_HW 0
+#ifndef USE_CRC_HW
+#define USE_CRC_HW 1
+#endif
 
 #ifndef MCUFREQ
 #define MCUFREQ 48000000 //MCU frequence
@@ -27,12 +30,15 @@
  * PINOUT CONFIG
  ******************************************************************************/
 #ifndef PORT_CLOCK_ENABLE
-#define PORT_CLOCK_ENABLE()         do { \
-                                    __HAL_RCC_GPIOA_CLK_ENABLE();\
-                                    __HAL_RCC_GPIOB_CLK_ENABLE();\
-                                      } while(0U)
+#define PORT_CLOCK_ENABLE()           \
+    do                                \
+    {                                 \
+        __HAL_RCC_GPIOA_CLK_ENABLE(); \
+        __HAL_RCC_GPIOB_CLK_ENABLE(); \
+    } while (0U)
 #endif
 
+// clang-format off
 //PTP pin definition
 #ifndef PTPA_PIN
 #define PTPA_PIN                    GPIO_PIN_8
