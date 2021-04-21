@@ -11,7 +11,7 @@
 #define _BOARD_CONFIG_H_
 
 #include <Arduino.h>
-
+// clang-format off
 #if defined(ARDUINO_SAMD_ZERO)
   #define LUOS_COM_CLOCK_ENABLE()                                                                                   \
     do                                                                                                              \

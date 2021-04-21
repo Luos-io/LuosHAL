@@ -26,9 +26,10 @@
  * PINOUT CONFIG
  ******************************************************************************/
 #ifndef PORT_CLOCK_ENABLE
-#define PORT_CLOCK_ENABLE()         do { \
-
-                                      } while(0U)
+#define PORT_CLOCK_ENABLE() \
+    do                      \
+    {                       \
+    } while (0U)
 #endif
 
 //PTP pin definition
@@ -105,9 +106,11 @@
  * COM CONFIG
  ******************************************************************************/
 #ifndef LUOS_COM_CLOCK_ENABLE
-#define LUOS_COM_CLOCK_ENABLE()   do { \
-
-                                      } while(0U)
+#define LUOS_COM_CLOCK_ENABLE() \
+    do                          \
+    {
+}
+while (0U)
 #endif
 #ifndef LUOS_COM
 #define LUOS_COM
@@ -118,13 +121,15 @@
 #ifndef LUOS_COM_IRQHANDLER
 #define LUOS_COM_IRQHANDLER()
 #endif
-                                      /*******************************************************************************
+/*******************************************************************************
  * FLASH CONFIG
  ******************************************************************************/
 #ifndef LUOS_DMA_CLOCK_ENABLE
-#define LUOS_DMA_CLOCK_ENABLE()     do { \
-
-                                      } while(0U)
+#define LUOS_DMA_CLOCK_ENABLE() \
+    do                          \
+    {
+}
+while (0U)
 #endif
 #ifndef LUOS_DMA
 #define LUOS_DMA
@@ -136,9 +141,11 @@
  * COM TIMEOUT CONFIG
  ******************************************************************************/
 #ifndef LUOS_TIMER_LOCK_ENABLE
-#define LUOS_TIMER_LOCK_ENABLE()         do { \
-
-                                      } while(0U)
+#define LUOS_TIMER_LOCK_ENABLE() \
+    do                           \
+    {
+}
+while (0U)
 #endif
 #ifndef LUOS_TIMER
 #define LUOS_TIMER
@@ -153,10 +160,10 @@
  * FLASH CONFIG
  ******************************************************************************/
 #ifndef PAGE_SIZE
-#define PAGE_SIZE                   (uint32_t) FLASH_PAGE_SIZE
+#define PAGE_SIZE (uint32_t) FLASH_PAGE_SIZE
 #endif
 #ifndef ADDRESS_LAST_PAGE_FLASH
-#define ADDRESS_LAST_PAGE_FLASH     ((uint32_t)(FLASH_BANK1_END - FLASH_PAGE_SIZE))
+#define ADDRESS_LAST_PAGE_FLASH ((uint32_t)(FLASH_BANK1_END - FLASH_PAGE_SIZE))
 #endif
 
 #endif /* _LUOSHAL_CONFIG_H_ */

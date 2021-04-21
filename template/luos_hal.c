@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-uint32_t Timer_Prescaler = (MCUFREQ/DEFAULTBAUDRATE)/TIMERDIV;//(freq MCU/freq timer)/divider timer clock source
+uint32_t Timer_Prescaler = (MCUFREQ / DEFAULTBAUDRATE) / TIMERDIV; //(freq MCU/freq timer)/divider timer clock source
 
 typedef struct
 {
@@ -33,7 +33,7 @@ typedef struct
 Port_t PTP[NBR_PORT];
 
 volatile uint16_t data_size_to_transmit = 0;
-volatile uint8_t *tx_data = 0;
+volatile uint8_t *tx_data               = 0;
 /*******************************************************************************
  * Function
  ******************************************************************************/
@@ -101,7 +101,7 @@ static void LuosHAL_SystickInit(void)
  ******************************************************************************/
 uint32_t LuosHAL_GetSystick(void)
 {
-    return ; //return  tick
+    return; //return  tick
 }
 /******************************************************************************
  * @brief Luos HAL Initialize Generale communication inter node
@@ -123,7 +123,7 @@ void LuosHAL_ComInit(uint32_t Baudrate)
     //if DMA possible initialize DMA for a data transmission
 #endif
     //Timeout Initialization
-    Timer_Prescaler = (MCUFREQ/Baudrate)/TIMERDIV;
+    Timer_Prescaler = (MCUFREQ / Baudrate) / TIMERDIV;
     LuosHAL_TimeoutInit();
 }
 /******************************************************************************
@@ -190,36 +190,36 @@ void LUOS_COM_IRQHANDLER()
 
     // reception management
     //if IT receive and IT receive enable
-        //get data from register
-        ctx.rx.callback(&data); // send reception byte to state machine
-        if (data_size_to_transmit == 0)
-        {
-            //clear error IT
-            return;
-        }
+    //get data from register
+    ctx.rx.callback(&data); // send reception byte to state machine
+    if (data_size_to_transmit == 0)
+    {
+        //clear error IT
+        return;
+    }
     //else if Framming error IT
-        ctx.rx.status.rx_framing_error = true;
+    ctx.rx.status.rx_framing_error = true;
 
     // Transmission management
     //if IT transmit complete and IT transmit complete enable
-        LuosHAL_SetRxState(true);
-        LuosHAL_SetTxState(false);
-        //diasble It tx complete
+    LuosHAL_SetRxState(true);
+    LuosHAL_SetTxState(false);
+    //diasble It tx complete
 
 #ifdef USE_TX_IT
     //else if IT transmit empty and IT transmit empty enable
-        // Transmit buffer empty (this is a software DMA)
-        data_size_to_transmit--;
-        //put data to register
-        if (data_size_to_transmit == 0)
-        {
-            // Transmission complete, stop loading data and watch for the end of transmission
-            // Disable Transmission empty buffer interrupt
-            // Enable Transmission complete interrupt
-        }
+    // Transmit buffer empty (this is a software DMA)
+    data_size_to_transmit--;
+    //put data to register
+    if (data_size_to_transmit == 0)
+    {
+        // Transmission complete, stop loading data and watch for the end of transmission
+        // Disable Transmission empty buffer interrupt
+        // Enable Transmission complete interrupt
     }
+}
 #endif
-    //clear error flag
+//clear error flag
 }
 /******************************************************************************
  * @brief Process data transmit
@@ -243,9 +243,9 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
         //enable IT tx empty
         //disable IT tx complete
 #else
-    data_size_to_transmit = 0;//Reset this value avoiding to check IT TC during collision
-    //set up DMA transfert
-    //enable IT tx complete
+        data_size_to_transmit = 0; //Reset this value avoiding to check IT TC during collision
+        //set up DMA transfert
+        //enable IT tx complete
 #endif
     }
     else
@@ -285,9 +285,9 @@ uint8_t LuosHAL_GetTxLockState(void)
     uint8_t result = false;
 
 #ifdef USART_ISR_BUSY
-        //check busy flag
-        LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
-        result = true;
+    //check busy flag
+    LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
+    result = true;
 #else
     if ((TX_LOCK_DETECT_PIN != DISABLE) && (TX_LOCK_DETECT_PORT != DISABLE))
     {
@@ -330,7 +330,7 @@ void LuosHAL_ResetTimeout(uint16_t nbrbit)
     //reset counter Timer
     //relaod value counter
     //if nbrbit != 0
-        //enable timer
+    //enable timer
 }
 /******************************************************************************
  * @brief Luos Timeout communication
@@ -340,11 +340,11 @@ void LuosHAL_ResetTimeout(uint16_t nbrbit)
 void LUOS_TIMER_IRQHANDLER()
 {
     //if It timeout
-        //clear IT
-        if ((ctx.tx.lock == true)&&(LuosHAL_GetTxLockState() == false))
-        {
-            Recep_Timeout();
-        }
+    //clear IT
+    if ((ctx.tx.lock == true) && (LuosHAL_GetTxLockState() == false))
+    {
+        Recep_Timeout();
+    }
 }
 /******************************************************************************
  * @brief Initialisation GPIO
@@ -401,7 +401,6 @@ static void LuosHAL_GPIOInit(void)
             //it falling
             //NVIC enable
         }
-
     }
 }
 /******************************************************************************
@@ -412,27 +411,27 @@ static void LuosHAL_GPIOInit(void)
 static void LuosHAL_RegisterPTP(void)
 {
 #if (NBR_PORT >= 1)
-    PTP[0].Pin = PTPA_PIN;
+    PTP[0].Pin  = PTPA_PIN;
     PTP[0].Port = PTPA_PORT;
-    PTP[0].IRQ = PTPA_IRQ;
+    PTP[0].IRQ  = PTPA_IRQ;
 #endif
 
 #if (NBR_PORT >= 2)
-    PTP[1].Pin = PTPB_PIN;
+    PTP[1].Pin  = PTPB_PIN;
     PTP[1].Port = PTPB_PORT;
-    PTP[1].IRQ = PTPB_IRQ;
+    PTP[1].IRQ  = PTPB_IRQ;
 #endif
 
 #if (NBR_PORT >= 3)
-    PTP[2].Pin = PTPC_PIN;
+    PTP[2].Pin  = PTPC_PIN;
     PTP[2].Port = PTPC_PORT;
-    PTP[2].IRQ = PTPC_IRQ;
+    PTP[2].IRQ  = PTPC_IRQ;
 #endif
 
 #if (NBR_PORT >= 4)
-    PTP[3].Pin = PTPD_PIN;
+    PTP[3].Pin  = PTPD_PIN;
     PTP[3].Port = PTPD_PORT;
-    PTP[3].IRQ = PTPD_IRQ;
+    PTP[3].IRQ  = PTPD_IRQ;
 #endif
 }
 /******************************************************************************
@@ -572,12 +571,12 @@ void LuosHAL_FlashWriteLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *dat
 
     //write data
 
-/******************************************************************************
+    /******************************************************************************
  * @brief read information from page where Luos keep permanente information
  * @param Address info / size to read / pointer callback data to read
  * @return
  ******************************************************************************/
-void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data)
-{
-    memcpy(data, (void *)(addr), size);
-}
+    void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t * data)
+    {
+        memcpy(data, (void *)(addr), size);
+    }

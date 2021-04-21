@@ -128,19 +128,19 @@
  * FLASH CONFIG
  ******************************************************************************/
 #ifndef LUOS_DMA_CLOCK_ENABLE
-#define LUOS_DMA_CLOCK_ENABLE()     __HAL_RCC_DMA2_CLK_ENABLE();
+#define LUOS_DMA_CLOCK_ENABLE() __HAL_RCC_DMA2_CLK_ENABLE();
 #endif
 #ifndef LUOS_DMA
-#define LUOS_DMA                    DMA2
+#define LUOS_DMA DMA2
 #endif
 #ifndef LUOS_DMA_STREAM
-#define LUOS_DMA_STREAM             LL_DMA_STREAM_7
+#define LUOS_DMA_STREAM LL_DMA_STREAM_7
 #endif
 #ifndef LUOS_DMA_CHANNEL
-#define LUOS_DMA_CHANNEL            LL_DMA_CHANNEL_4
+#define LUOS_DMA_CHANNEL LL_DMA_CHANNEL_4
 #endif
 #ifndef LUOS_DMA_REMAP
-#define LUOS_DMA_REMAP              0
+#define LUOS_DMA_REMAP 0
 #endif
 /*******************************************************************************
  * COM TIMEOUT CONFIG

@@ -30,12 +30,15 @@
  * PINOUT CONFIG
  ******************************************************************************/
 #ifndef PORT_CLOCK_ENABLE
-#define PORT_CLOCK_ENABLE()         do { \
-                                    __HAL_RCC_GPIOA_CLK_ENABLE();\
-                                    __HAL_RCC_GPIOB_CLK_ENABLE();\
-                                      } while(0U)
+#define PORT_CLOCK_ENABLE()           \
+    do                                \
+    {                                 \
+        __HAL_RCC_GPIOA_CLK_ENABLE(); \
+        __HAL_RCC_GPIOB_CLK_ENABLE(); \
+    } while (0U)
 #endif
 
+// clang-format off
 //PTP pin definition
 #ifndef PTPA_PIN
 #define PTPA_PIN                    GPIO_PIN_8
