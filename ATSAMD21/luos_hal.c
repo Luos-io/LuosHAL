@@ -229,9 +229,9 @@ void LuosHAL_SetRxState(uint8_t Enable)
 {
     if (Enable == true)
     {
-        while ((LUOS_COM->USART.INTFLAG.reg & SERCOM_USART_INTFLAG_RXC) == SERCOM_USART_INTFLAG_RXC)
+        while ((LUOS_COM->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_RXC_Msk) == SERCOM_USART_INT_INTFLAG_RXC_Msk)
         {
-            LUOS_COM->USART.DATA.reg; //clear data buffer
+            LUOS_COM->USART_INT.SERCOM_DATA; //clear data buffer
         }
         LUOS_COM->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_RXC_Msk;
     }
