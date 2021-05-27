@@ -51,10 +51,6 @@ Port_t PTP[NBR_PORT];
 
 volatile uint16_t data_size_to_transmit = 0;
 volatile uint8_t *tx_data               = 0;
-
-#ifdef BOOTLOADER_CONFIG
-uint8_t memory_erased = 0x00;
-#endif
 /*******************************************************************************
  * Function
  ******************************************************************************/
@@ -883,13 +879,13 @@ uint16_t LuosHAL_GetNodeID(void)
  * @param Address, size
  * @return
  ******************************************************************************/
-void LuosHAL_EraseMemory(uint32_t address_to_erase, uint16_t size_to_erase)
+void LuosHAL_EraseMemory(uint32_t address, uint16_t size)
 {
     uint32_t nb_sectors_to_erase = 0;
-    uint32_t page_to_erase       = address_to_erase / (uint32_t)PAGE_SIZE;
+    uint32_t page_to_erase       = address / (uint32_t)PAGE_SIZE;
 
     // compute number of sectors to erase
-    nb_sectors_to_erase = (FLASH_END + 1 - APP_ADDRESS) / (uint32_t)PAGE_SIZE;
+    nb_sectors_to_erase = (FLASH_END + 1 - address) / (uint32_t)PAGE_SIZE;
 
     uint32_t page_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
@@ -911,8 +907,6 @@ void LuosHAL_EraseMemory(uint32_t address_to_erase, uint16_t size_to_erase)
         // update page to erase
         page_to_erase += 1;
     }
-
-    memory_erased = 0x01;
 }
 #endif
 
@@ -924,12 +918,6 @@ void LuosHAL_EraseMemory(uint32_t address_to_erase, uint16_t size_to_erase)
  ******************************************************************************/
 void LuosHAL_ProgramFlash(uint32_t address, uint16_t size, uint8_t *data)
 {
-    // erase memory if needed
-    if (!memory_erased)
-    {
-        LuosHAL_EraseMemory(address, size);
-    }
-
     // Unlock flash
     HAL_FLASH_Unlock();
     // ST hal flash program function write data by uint64_t raw data
