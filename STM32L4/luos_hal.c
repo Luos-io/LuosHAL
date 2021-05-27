@@ -812,7 +812,7 @@ void LuosHAL_SetMode(uint8_t mode)
     FLASH_EraseInitTypeDef s_eraseinit;
 
     s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
-    s_eraseinit.Page      = SHARED_FLASH_PAGE - 1;
+    s_eraseinit.Page      = SHARED_MEMORY_ADDRESS / (uint32_t)PAGE_SIZE;
     s_eraseinit.NbPages   = 1;
 
     // Unlock flash
@@ -840,7 +840,7 @@ void LuosHAL_SaveNodeID(uint16_t node_id)
     uint32_t data_to_write = saved_data | (node_id << NODE_ID_OFFSET);
 
     s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
-    s_eraseinit.Page      = SHARED_FLASH_PAGE - 1;
+    s_eraseinit.Page      = SHARED_MEMORY_ADDRESS / (uint32_t)PAGE_SIZE;
     s_eraseinit.NbPages   = 1;
 
     // Unlock flash
@@ -875,13 +875,13 @@ uint16_t LuosHAL_GetNodeID(void)
  * @param Address, node_id
  * @return
  ******************************************************************************/
-void LuosHAL_ProgramFlash(uint32_t address, uint8_t page, uint16_t size, uint8_t *data)
+void LuosHAL_ProgramFlash(uint32_t address, uint16_t size, uint8_t *data)
 {
     uint32_t page_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
 
     s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
-    s_eraseinit.Page      = page - 1;
+    s_eraseinit.Page      = address / (uint32_t)PAGE_SIZE;
     s_eraseinit.NbPages   = 1;
 
     // Unlock flash
