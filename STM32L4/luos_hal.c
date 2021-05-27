@@ -21,6 +21,10 @@
 #include "stm32l4xx_ll_dma.h"
 #include "stm32l4xx_ll_system.h"
 
+#ifdef BOOTLOADER_CONFIG
+#include <math.h>
+#endif
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -47,6 +51,10 @@ Port_t PTP[NBR_PORT];
 
 volatile uint16_t data_size_to_transmit = 0;
 volatile uint8_t *tx_data               = 0;
+
+#ifdef BOOTLOADER_CONFIG
+uint8_t memory_erased = 0x00;
+#endif
 /*******************************************************************************
  * Function
  ******************************************************************************/
@@ -871,43 +879,61 @@ uint16_t LuosHAL_GetNodeID(void)
 
 #ifdef BOOTLOADER_CONFIG
 /******************************************************************************
- * @brief Save node ID in shared flash memory
- * @param Address, node_id
+ * @brief erase sectors in flash memory
+ * @param Address, size
  * @return
  ******************************************************************************/
-void LuosHAL_EraseSectors(uint32_t address, uint16_t size)
+void LuosHAL_EraseMemory(uint32_t address_to_erase, uint16_t size_to_erase)
 {
+    uint32_t nb_sectors_to_erase = 0;
+    uint32_t page_to_erase       = address_to_erase / (uint32_t)PAGE_SIZE;
+
+    // compute number of sectors to erase
+    nb_sectors_to_erase = (FLASH_END + 1 - APP_ADDRESS) / (uint32_t)PAGE_SIZE;
+
     uint32_t page_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
-
     s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
-    s_eraseinit.Page      = address / (uint32_t)PAGE_SIZE;
     s_eraseinit.NbPages   = 1;
 
-    // Unlock flash
-    HAL_FLASH_Unlock();
-    // Erase Page
-    HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
-    // re-lock FLASH
-    HAL_FLASH_Lock();
+    int i = 0;
+    for (i = 0; i < nb_sectors_to_erase; i++)
+    {
+        s_eraseinit.Page = page_to_erase;
+
+        // Unlock flash
+        HAL_FLASH_Unlock();
+        // Erase Page
+        HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
+        // re-lock FLASH
+        HAL_FLASH_Lock();
+
+        // update page to erase
+        page_to_erase += 1;
+    }
+
+    memory_erased = 0x01;
 }
 #endif
 
 #ifdef BOOTLOADER_CONFIG
 /******************************************************************************
- * @brief Save node ID in shared flash memory
- * @param Address, node_id
+ * @brief Save binary data in shared flash memory
+ * @param Address, size, data[]
  * @return
  ******************************************************************************/
 void LuosHAL_ProgramFlash(uint32_t address, uint16_t size, uint8_t *data)
 {
-    // erase all sectors to program
-    LuosHAL_EraseSectors(address, size);
+    // erase memory if needed
+    if (!memory_erased)
+    {
+        LuosHAL_EraseMemory(address, size);
+    }
 
     // Unlock flash
     HAL_FLASH_Unlock();
     // ST hal flash program function write data by uint64_t raw data
-    for (uint32_t i = 0; i < PAGE_SIZE; i += sizeof(uint64_t))
+    for (uint32_t i = 0; i < size; i += sizeof(uint64_t))
     {
         while (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, i + address, *(uint64_t *)(&data[i])) != HAL_OK)
             ;
