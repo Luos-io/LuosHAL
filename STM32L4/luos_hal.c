@@ -875,7 +875,7 @@ uint16_t LuosHAL_GetNodeID(void)
  * @param Address, node_id
  * @return
  ******************************************************************************/
-void LuosHAL_ProgramFlash(uint32_t address, uint16_t size, uint8_t *data)
+void LuosHAL_EraseSectors(uint32_t address, uint16_t size)
 {
     uint32_t page_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
@@ -888,7 +888,24 @@ void LuosHAL_ProgramFlash(uint32_t address, uint16_t size, uint8_t *data)
     HAL_FLASH_Unlock();
     // Erase Page
     HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
+    // re-lock FLASH
+    HAL_FLASH_Lock();
+}
+#endif
 
+#ifdef BOOTLOADER_CONFIG
+/******************************************************************************
+ * @brief Save node ID in shared flash memory
+ * @param Address, node_id
+ * @return
+ ******************************************************************************/
+void LuosHAL_ProgramFlash(uint32_t address, uint16_t size, uint8_t *data)
+{
+    // erase all sectors to program
+    LuosHAL_EraseSectors(address, size);
+
+    // Unlock flash
+    HAL_FLASH_Unlock();
     // ST hal flash program function write data by uint64_t raw data
     for (uint32_t i = 0; i < PAGE_SIZE; i += sizeof(uint64_t))
     {
