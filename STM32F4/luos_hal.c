@@ -841,7 +841,8 @@ void LuosHAL_SaveNodeID(uint16_t node_id)
     uint32_t *p_start = (uint32_t *)SHARED_MEMORY_ADDRESS;
 
     uint32_t saved_data    = *p_start;
-    uint32_t data_to_write = saved_data & (node_id << NODE_ID_OFFSET);
+    uint32_t data_tmp      = ~NODE_ID_MASK | (node_id << NODE_ID_OFFSET);
+    uint32_t data_to_write = saved_data & data_tmp;
 
     s_eraseinit.TypeErase    = FLASH_TYPEERASE_SECTORS;
     s_eraseinit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
@@ -883,7 +884,7 @@ uint16_t LuosHAL_GetNodeID(void)
 void LuosHAL_EraseMemory(uint32_t address, uint16_t size)
 {
     uint32_t nb_sectors_to_erase = FLASH_SECTOR_TOTAL - APP_ADRESS_SECTOR;
-    uint32_t sector_to_erase     = APP_ADRESS_SECTOR;
+    uint32_t sector_to_erase     = SHARED_MEMORY_SECTOR;
 
     uint32_t page_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
