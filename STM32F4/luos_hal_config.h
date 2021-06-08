@@ -173,14 +173,30 @@
 /*******************************************************************************
  * BOOTLOADER CONFIG
  ******************************************************************************/
+#ifndef SHARED_MEMORY_ADDRESS
 #define SHARED_MEMORY_ADDRESS 0x0800C000
-#define SHARED_FLASH_PAGE     25
-#define APP_ADDRESS           (uint32_t)0x0800C800
-#define APP_FLASH_PAGE        26
+#endif
+#ifndef SHARED_MEMORY_SECTOR
+#define SHARED_MEMORY_SECTOR FLASH_SECTOR_3
+#endif
+#ifndef APP_ADDRESS
+#define APP_ADDRESS (uint32_t)0x08010000
+#endif
+#ifndef APP_ADRESS_SECTOR
+#define APP_ADRESS_SECTOR FLASH_SECTOR_4
+#endif
 
-#define BOOT_MODE_MASK   0x000000FF
+#ifndef BOOT_MODE_MASK
+#define BOOT_MODE_MASK 0x000000FF
+#endif
+#ifndef BOOT_MODE_OFFSET
 #define BOOT_MODE_OFFSET 0
-#define NODE_ID_MASK     0x00FFFF00
-#define NODE_ID_OFFSET   8
+#endif
+#ifndef NODE_ID_MASK
+#define NODE_ID_MASK 0x00FFFF00
+#endif
+#ifndef NODE_ID_OFFSET
+#define NODE_ID_OFFSET 8
+#endif
 
 #endif /* _LUOSHAL_CONFIG_H_ */
