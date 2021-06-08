@@ -810,7 +810,7 @@ uint8_t LuosHAL_GetMode(void)
  ******************************************************************************/
 void LuosHAL_SetMode(uint8_t mode)
 {
-    uint32_t data_to_write = ((uint32_t)mode) << BOOT_MODE_OFFSET;
+    uint32_t data_to_write = ~BOOT_MODE_MASK | (mode << BOOT_MODE_OFFSET);
     uint32_t page_error    = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
 
@@ -822,7 +822,7 @@ void LuosHAL_SetMode(uint8_t mode)
     // Unlock flash
     HAL_FLASH_Unlock();
     // Erase Page
-    HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
+    // HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
     // ST hal flash program function write data by uint64_t raw data
     HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, (uint32_t)SHARED_MEMORY_ADDRESS, data_to_write);
     // re-lock FLASH
@@ -841,7 +841,7 @@ void LuosHAL_SaveNodeID(uint16_t node_id)
     uint32_t *p_start = (uint32_t *)SHARED_MEMORY_ADDRESS;
 
     uint32_t saved_data    = *p_start;
-    uint32_t data_to_write = saved_data | (node_id << NODE_ID_OFFSET);
+    uint32_t data_to_write = saved_data & (node_id << NODE_ID_OFFSET);
 
     s_eraseinit.TypeErase    = FLASH_TYPEERASE_SECTORS;
     s_eraseinit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
@@ -851,7 +851,7 @@ void LuosHAL_SaveNodeID(uint16_t node_id)
     // Unlock flash
     HAL_FLASH_Unlock();
     // Erase Page
-    HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
+    // HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
     // ST hal flash program function write data by uint64_t raw data
     HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, (uint32_t)SHARED_MEMORY_ADDRESS, data_to_write);
     // re-lock FLASH
