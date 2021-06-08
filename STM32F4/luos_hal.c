@@ -814,9 +814,10 @@ void LuosHAL_SetMode(uint8_t mode)
     uint32_t page_error    = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
 
-    s_eraseinit.TypeErase = FLASH_TYPEERASE_SECTORS;
-    s_eraseinit.Sector    = FLASH_SECTOR_3;
-    s_eraseinit.NbSectors = 1;
+    s_eraseinit.TypeErase    = FLASH_TYPEERASE_SECTORS;
+    s_eraseinit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+    s_eraseinit.Sector       = SHARED_MEMORY_SECTOR;
+    s_eraseinit.NbSectors    = 1;
 
     // Unlock flash
     HAL_FLASH_Unlock();
@@ -842,9 +843,10 @@ void LuosHAL_SaveNodeID(uint16_t node_id)
     uint32_t saved_data    = *p_start;
     uint32_t data_to_write = saved_data | (node_id << NODE_ID_OFFSET);
 
-    s_eraseinit.TypeErase = FLASH_TYPEERASE_SECTORS;
-    s_eraseinit.Sector    = SHARED_MEMORY_SECTOR;
-    s_eraseinit.NbSectors = 1;
+    s_eraseinit.TypeErase    = FLASH_TYPEERASE_SECTORS;
+    s_eraseinit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+    s_eraseinit.Sector       = SHARED_MEMORY_SECTOR;
+    s_eraseinit.NbSectors    = 1;
 
     // Unlock flash
     HAL_FLASH_Unlock();
@@ -885,8 +887,9 @@ void LuosHAL_EraseMemory(uint32_t address, uint16_t size)
 
     uint32_t page_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
-    s_eraseinit.TypeErase = FLASH_TYPEERASE_SECTORS;
-    s_eraseinit.NbSectors = 1;
+    s_eraseinit.TypeErase    = FLASH_TYPEERASE_SECTORS;
+    s_eraseinit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+    s_eraseinit.NbSectors    = 1;
 
     int i = 0;
     for (i = 0; i < nb_sectors_to_erase; i++)
