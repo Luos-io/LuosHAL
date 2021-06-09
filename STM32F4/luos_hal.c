@@ -788,6 +788,7 @@ void LuosHAL_JumpToApp(uint32_t app_addr)
 }
 #endif
 
+#ifdef BOOTLOADER_CONFIG
 /******************************************************************************
  * @brief Return bootloader mode saved in flash
  * @param 
@@ -800,6 +801,7 @@ uint8_t LuosHAL_GetMode(void)
 
     return (uint8_t)data;
 }
+#endif
 
 /******************************************************************************
  * @brief Set boot mode in shared flash memory
@@ -822,7 +824,7 @@ void LuosHAL_SetMode(uint8_t mode)
     * when STRT bit in FLASH->CR register is called from the app (sector 4 in flash)
     * the application crashes, that's why we only erase the flash from the 
     * bootloader
-    /****************************** WARNING **************************************/
+    ******************************* WARNING **************************************/
     if (mode == 0x01)
     {
         // erase sector
