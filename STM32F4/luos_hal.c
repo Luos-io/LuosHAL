@@ -20,8 +20,6 @@
 #include "stm32f4xx_ll_exti.h"
 #include "stm32f4xx_ll_dma.h"
 #include "stm32f4xx_ll_system.h"
-
-#include "gpio.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -832,8 +830,6 @@ void LuosHAL_SetMode(uint8_t mode)
         HAL_FLASHEx_Erase(&s_eraseinit, &sector_error);
         HAL_FLASH_Lock();
     }
-
-    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
 
     // write sector
     HAL_FLASH_Unlock();
