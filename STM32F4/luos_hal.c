@@ -20,6 +20,8 @@
 #include "stm32f4xx_ll_exti.h"
 #include "stm32f4xx_ll_dma.h"
 #include "stm32f4xx_ll_system.h"
+
+#include "gpio.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -788,7 +790,6 @@ void LuosHAL_JumpToApp(uint32_t app_addr)
 }
 #endif
 
-#ifdef BOOTLOADER_CONFIG
 /******************************************************************************
  * @brief Return bootloader mode saved in flash
  * @param 
@@ -801,7 +802,6 @@ uint8_t LuosHAL_GetMode(void)
 
     return (uint8_t)data;
 }
-#endif
 
 /******************************************************************************
  * @brief Set boot mode in shared flash memory
@@ -811,21 +811,33 @@ uint8_t LuosHAL_GetMode(void)
 void LuosHAL_SetMode(uint8_t mode)
 {
     uint32_t data_to_write = ~BOOT_MODE_MASK | (mode << BOOT_MODE_OFFSET);
-    uint32_t page_error    = 0;
+
+    uint32_t sector_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
 
     s_eraseinit.TypeErase    = FLASH_TYPEERASE_SECTORS;
     s_eraseinit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
-    s_eraseinit.Sector       = SHARED_MEMORY_SECTOR;
     s_eraseinit.NbSectors    = 1;
+    s_eraseinit.Sector       = SHARED_MEMORY_SECTOR;
 
-    // Unlock flash
+    /****************************** WARNING ***************************************
+    * when STRT bit in FLASH->CR register is called from the app (sector 4 in flash)
+    * the application crashes, that's why we only erase the flash from the 
+    * bootloader
+    /****************************** WARNING **************************************/
+    if (mode == 0x01)
+    {
+        // erase sector
+        HAL_FLASH_Unlock();
+        HAL_FLASHEx_Erase(&s_eraseinit, &sector_error);
+        HAL_FLASH_Lock();
+    }
+
+    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+
+    // write sector
     HAL_FLASH_Unlock();
-    // Erase Page
-    // HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
-    // ST hal flash program function write data by uint64_t raw data
     HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, (uint32_t)SHARED_MEMORY_ADDRESS, data_to_write);
-    // re-lock FLASH
     HAL_FLASH_Lock();
 }
 
@@ -836,26 +848,14 @@ void LuosHAL_SetMode(uint8_t mode)
  ******************************************************************************/
 void LuosHAL_SaveNodeID(uint16_t node_id)
 {
-    uint32_t page_error = 0;
-    FLASH_EraseInitTypeDef s_eraseinit;
-    uint32_t *p_start = (uint32_t *)SHARED_MEMORY_ADDRESS;
-
+    uint32_t *p_start      = (uint32_t *)SHARED_MEMORY_ADDRESS;
     uint32_t saved_data    = *p_start;
     uint32_t data_tmp      = ~NODE_ID_MASK | (node_id << NODE_ID_OFFSET);
     uint32_t data_to_write = saved_data & data_tmp;
 
-    s_eraseinit.TypeErase    = FLASH_TYPEERASE_SECTORS;
-    s_eraseinit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
-    s_eraseinit.Sector       = SHARED_MEMORY_SECTOR;
-    s_eraseinit.NbSectors    = 1;
-
-    // Unlock flash
+    // write sector
     HAL_FLASH_Unlock();
-    // Erase Page
-    // HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
-    // ST hal flash program function write data by uint64_t raw data
     HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, (uint32_t)SHARED_MEMORY_ADDRESS, data_to_write);
-    // re-lock FLASH
     HAL_FLASH_Lock();
 }
 
@@ -884,9 +884,9 @@ uint16_t LuosHAL_GetNodeID(void)
 void LuosHAL_EraseMemory(uint32_t address, uint16_t size)
 {
     uint32_t nb_sectors_to_erase = FLASH_SECTOR_TOTAL - APP_ADRESS_SECTOR;
-    uint32_t sector_to_erase     = SHARED_MEMORY_SECTOR;
+    uint32_t sector_to_erase     = APP_ADRESS_SECTOR;
 
-    uint32_t page_error = 0;
+    uint32_t sector_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
     s_eraseinit.TypeErase    = FLASH_TYPEERASE_SECTORS;
     s_eraseinit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
@@ -900,7 +900,7 @@ void LuosHAL_EraseMemory(uint32_t address, uint16_t size)
         // Unlock flash
         HAL_FLASH_Unlock();
         // Erase Page
-        HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
+        HAL_FLASHEx_Erase(&s_eraseinit, &sector_error);
         // re-lock FLASH
         HAL_FLASH_Lock();
 
