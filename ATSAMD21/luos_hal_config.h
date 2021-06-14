@@ -193,8 +193,10 @@
 /*******************************************************************************
  * BOOTLOADER CONFIG
  ******************************************************************************/
-#define SHARED_MEMORY_ADDRESS 0x0800C000
-#define APP_ADDRESS           (uint32_t)0x0800C800
+#define FLASH_END FLASH_SIZE - 1
+
+#define SHARED_MEMORY_ADDRESS 0x0000A000
+#define APP_ADDRESS           0x0000A100
 
 #define BOOT_MODE_MASK   0x000000FF
 #define BOOT_MODE_OFFSET 0
