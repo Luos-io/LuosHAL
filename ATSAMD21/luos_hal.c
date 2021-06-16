@@ -945,24 +945,26 @@ void LuosHAL_ProgramFlash(uint32_t address, uint16_t size, uint8_t *data)
     uint32_t data_index = 0;
     uint8_t page_index = 0;
     
+    // TODO : debug
+    //uint8_t data_test_1[4] = {0xA5, 0x00, 0x00, 0x0F};
+    
     // wait if NVM controller is busy
     while((NVMCTRL_REGS->NVMCTRL_INTFLAG & NVMCTRL_INTFLAG_READY_Msk) == 0);
     
     while(data_index < size)
     {
         // set addr in NVM register
-        NVMCTRL_REGS->NVMCTRL_ADDR = address >> 1;
+        NVMCTRL_REGS->NVMCTRL_ADDR = (uint32_t)&data[data_index] >> 1;
         // fill page buffer with data bytes
-        for (page_index = 0; page_index < PAGE_SIZE; page_index++)
+        for (page_index = 0; page_index < 16; page_index++)
         {
             // break if all data had been written
             if(data_index >= size) break;
             // write data
-            *paddress = data[data_index];
+            *paddress = *(uint32_t *)&data[data_index];
             // update address
             paddress += 1;
-            address += 1;
-            data_index += 1;
+            data_index += 4;
         }
         // Set address and command 
         NVMCTRL_REGS->NVMCTRL_CTRLA = NVMCTRL_CTRLA_CMD_WP | NVMCTRL_CTRLA_CMDEX_KEY;
