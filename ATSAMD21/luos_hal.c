@@ -917,6 +917,19 @@ uint16_t LuosHAL_GetNodeID(void)
  ******************************************************************************/
 void LuosHAL_EraseMemory(uint32_t address, uint16_t size)
 {
+    uint32_t erase_address   = APP_ADDRESS;
+    const uint32_t row_size = 256;
+    
+    for( erase_address=APP_ADDRESS; erase_address<FLASH_END; erase_address += row_size )
+    {
+        // wait if NVM controller is busy
+        while((NVMCTRL_REGS->NVMCTRL_INTFLAG & NVMCTRL_INTFLAG_READY_Msk) == 0);
+        // erase row
+        NVMCTRL_REGS->NVMCTRL_ADDR  = erase_address >> 1;
+        NVMCTRL_REGS->NVMCTRL_CTRLA = NVMCTRL_CTRLA_CMD_ER_Val | NVMCTRL_CTRLA_CMDEX_KEY; 
+        // wait during erase
+        while((NVMCTRL_REGS->NVMCTRL_INTFLAG & NVMCTRL_INTFLAG_READY_Msk) == 0);
+    }
 }
 #endif
 
@@ -928,6 +941,34 @@ void LuosHAL_EraseMemory(uint32_t address, uint16_t size)
  ******************************************************************************/
 void LuosHAL_ProgramFlash(uint32_t address, uint16_t size, uint8_t *data)
 {
+    uint32_t *paddress = (uint32_t *)address;
+    uint32_t data_index = 0;
+    uint8_t page_index = 0;
+    
+    // wait if NVM controller is busy
+    while((NVMCTRL_REGS->NVMCTRL_INTFLAG & NVMCTRL_INTFLAG_READY_Msk) == 0);
+    
+    while(data_index < size)
+    {
+        // set addr in NVM register
+        NVMCTRL_REGS->NVMCTRL_ADDR = address >> 1;
+        // fill page buffer with data bytes
+        for (page_index = 0; page_index < PAGE_SIZE; page_index++)
+        {
+            // break if all data had been written
+            if(data_index >= size) break;
+            // write data
+            *paddress = data[data_index];
+            // update address
+            paddress += 1;
+            address += 1;
+            data_index += 1;
+        }
+        // Set address and command 
+        NVMCTRL_REGS->NVMCTRL_CTRLA = NVMCTRL_CTRLA_CMD_WP | NVMCTRL_CTRLA_CMDEX_KEY;
+        // wait during programming
+        while((NVMCTRL_REGS->NVMCTRL_INTFLAG & NVMCTRL_INTFLAG_READY_Msk) == 0);
+    }
 }
 #endif
 
