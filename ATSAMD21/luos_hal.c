@@ -945,9 +945,6 @@ void LuosHAL_ProgramFlash(uint32_t address, uint16_t size, uint8_t *data)
     uint32_t data_index = 0;
     uint8_t page_index = 0;
     
-    // TODO : debug
-    //uint8_t data_test_1[4] = {0xA5, 0x00, 0x00, 0x0F};
-    
     // wait if NVM controller is busy
     while((NVMCTRL_REGS->NVMCTRL_INTFLAG & NVMCTRL_INTFLAG_READY_Msk) == 0);
     
