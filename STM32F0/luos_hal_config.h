@@ -167,7 +167,7 @@
 /*******************************************************************************
  * BOOTLOADER CONFIG
  ******************************************************************************/
-#define FLASH_END 0x0003FFFF
+#define FLASH_END 0x0801FFFF
 
 #define SHARED_MEMORY_ADDRESS 0x0800C000
 #define APP_ADDRESS           (uint32_t)0x0800C800
