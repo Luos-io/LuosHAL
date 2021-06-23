@@ -167,14 +167,12 @@
 /*******************************************************************************
  * BOOTLOADER CONFIG
  ******************************************************************************/
-#define SHARED_MEMORY_ADDRESS 0
-#define SHARED_FLASH_PAGE     0
-#define APP_ADDRESS           0
-#define APP_FLASH_PAGE        0
+#define SHARED_MEMORY_ADDRESS 0x0800C000
+#define APP_ADDRESS           (uint32_t)0x0800C800
 
-#define BOOT_MODE_MASK   0
+#define BOOT_MODE_MASK   0x000000FF
 #define BOOT_MODE_OFFSET 0
-#define NODE_ID_MASK     0
-#define NODE_ID_OFFSET   0
+#define NODE_ID_MASK     0x00FFFF00
+#define NODE_ID_OFFSET   8
 
 #endif /* _LUOSHAL_CONFIG_H_ */
