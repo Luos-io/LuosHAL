@@ -811,7 +811,7 @@ uint8_t LuosHAL_GetMode(void)
  ******************************************************************************/
 void LuosHAL_SetMode(uint8_t mode)
 {
-    uint64_t data_to_write = mode << BOOT_MODE_OFFSET;
+    uint64_t data_to_write = ~BOOT_MODE_MASK | (mode << BOOT_MODE_OFFSET);
     uint32_t page_error    = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
 
@@ -841,7 +841,8 @@ void LuosHAL_SaveNodeID(uint16_t node_id)
     uint32_t *p_start = (uint32_t *)SHARED_MEMORY_ADDRESS;
 
     uint32_t saved_data    = *p_start;
-    uint32_t data_to_write = saved_data | (node_id << NODE_ID_OFFSET);
+    uint32_t data_tmp      = ~NODE_ID_MASK | (node_id << NODE_ID_OFFSET);
+    uint32_t data_to_write = saved_data & data_tmp;
 
     s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
     s_eraseinit.Page      = SHARED_MEMORY_ADDRESS / (uint32_t)PAGE_SIZE;
