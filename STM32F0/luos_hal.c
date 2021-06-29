@@ -779,9 +779,6 @@ void LuosHAL_JumpToApp(uint32_t app_addr)
     SysTick->LOAD = 0;
     SysTick->VAL  = 0;
 
-    // set the new vectore adress before the jump
-    bootloader_vtor = (uint32_t)APP_ADDRESS;
-
     __set_MSP(*(__IO uint32_t *)app_addr);
     Jump();
 }

@@ -18,16 +18,6 @@
 
 #define ADDRESS_ALIASES_FLASH   ADDRESS_LAST_PAGE_FLASH
 #define ADDRESS_BOOT_FLAG_FLASH (ADDRESS_LAST_PAGE_FLASH + PAGE_SIZE) - 4
-
-#ifdef BOOTLOADER_CONFIG
-#define RSVD_SECTION ".rsvd.data,\"aw\",%nobits//"
-#define _RSVD        __attribute__((used, section(RSVD_SECTION)))
-#endif
-
-#ifdef BOOTLOADER_CONFIG
-static volatile _RSVD uint32_t bootloader_vtor;
-extern uint32_t *g_pfnVectors;
-#endif
 /*******************************************************************************
  * Variables
  ******************************************************************************/
