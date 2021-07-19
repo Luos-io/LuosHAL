@@ -146,16 +146,16 @@
  * COM TIMEOUT CONFIG
  ******************************************************************************/
 #ifndef LUOS_TIMER_CLOCK_ENABLE
-#define LUOS_TIMER_CLOCK_ENABLE() __HAL_RCC_TIM6_CLK_ENABLE()
+#define LUOS_TIMER_CLOCK_ENABLE() __HAL_RCC_TIM5_CLK_ENABLE()
 #endif
 #ifndef LUOS_TIMER
-#define LUOS_TIMER TIM6
+#define LUOS_TIMER TIM5
 #endif
 #ifndef LUOS_TIMER_IRQ
-#define LUOS_TIMER_IRQ TIM6_DAC_IRQn
+#define LUOS_TIMER_IRQ TIM5_IRQn
 #endif
 #ifndef LUOS_TIMER_IRQHANDLER
-#define LUOS_TIMER_IRQHANDLER() TIM6_DAC_IRQHandler()
+#define LUOS_TIMER_IRQHANDLER() TIM5_IRQHandler()
 #endif
 /*******************************************************************************
  * FLASH CONFIG
@@ -164,10 +164,26 @@
 #define PAGE_SIZE (uint32_t)0x400
 #endif
 #ifndef FLASH_SECTOR
-#define FLASH_SECTOR FLASH_SECTOR_11
+#define FLASH_SECTOR FLASH_SECTOR_7
 #endif
 #ifndef ADDRESS_LAST_PAGE_FLASH
 #define ADDRESS_LAST_PAGE_FLASH ((uint32_t)(FLASH_END - PAGE_SIZE))
+#endif
+
+/*******************************************************************************
+ * BOOTLOADER CONFIG
+ ******************************************************************************/
+#ifndef SHARED_MEMORY_ADDRESS
+#define SHARED_MEMORY_ADDRESS 0x0800C000
+#endif
+#ifndef SHARED_MEMORY_SECTOR
+#define SHARED_MEMORY_SECTOR FLASH_SECTOR_3
+#endif
+#ifndef APP_ADDRESS
+#define APP_ADDRESS (uint32_t)0x08010000
+#endif
+#ifndef APP_ADRESS_SECTOR
+#define APP_ADRESS_SECTOR FLASH_SECTOR_4
 #endif
 
 #endif /* _LUOSHAL_CONFIG_H_ */
