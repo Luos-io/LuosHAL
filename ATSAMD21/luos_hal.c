@@ -781,7 +781,7 @@ void LuosHAL_FlashWriteLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *dat
     /* Set address and command */
     NVMCTRL_REGS->NVMCTRL_ADDR = addr >> 1;
 
-    NVMCTRL_REGS->NVMCTRL_CTRLA = NVMCTRL_CTRLA_CMD_WP_Val | NVMCTRL_CTRLA_CMDEX_KEY;
+    NVMCTRL_REGS->NVMCTRL_CTRLA = NVMCTRL_CTRLA_CMD_WP | NVMCTRL_CTRLA_CMDEX_KEY;
 }
 /******************************************************************************
  * @brief read information from page where Luos keep permanente information
@@ -792,3 +792,221 @@ void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data
 {
     memcpy(data, (void *)(addr), size);
 }
+
+#ifdef BOOTLOADER_CONFIG
+/******************************************************************************
+ * @brief DeInit Bootloader peripherals
+ * @param 
+ * @return
+ ******************************************************************************/
+void LuosHAL_DeInit(void)
+{
+}
+#endif
+
+#ifdef BOOTLOADER_CONFIG
+/******************************************************************************
+ * @brief DeInit Bootloader peripherals
+ * @param 
+ * @return
+ ******************************************************************************/
+typedef void (*pFunction)(void); /*!< Function pointer definition */
+
+void LuosHAL_JumpToApp(uint32_t app_addr)
+{
+    uint32_t JumpAddress = *(__IO uint32_t *)(app_addr + 4);
+    pFunction Jump       = (pFunction)JumpAddress;
+
+    __disable_irq();
+
+    SysTick->CTRL = 0;
+    SysTick->LOAD = 0;
+    SysTick->VAL  = 0;
+
+    SCB->VTOR = app_addr;
+
+    __set_MSP(*(__IO uint32_t *)app_addr);
+    Jump();
+}
+#endif
+
+#ifdef BOOTLOADER_CONFIG
+/******************************************************************************
+ * @brief Return bootloader mode saved in flash
+ * @param 
+ * @return
+ ******************************************************************************/
+uint8_t LuosHAL_GetMode(void)
+{
+    uint32_t *p_start = (uint32_t *)SHARED_MEMORY_ADDRESS;
+    uint32_t data     = (*p_start & BOOT_MODE_MASK) >> BOOT_MODE_OFFSET;
+
+    return (uint8_t)data;
+}
+#endif
+
+/******************************************************************************
+ * @brief Set boot mode in shared flash memory
+ * @param 
+ * @return
+ ******************************************************************************/
+void LuosHAL_SetMode(uint8_t mode)
+{
+    uint32_t data_to_write = ~BOOT_MODE_MASK | (mode << BOOT_MODE_OFFSET);
+    uint32_t address       = SHARED_MEMORY_ADDRESS;
+    uint32_t *paddress     = (uint32_t *)address;
+
+    // erase shared mem sector
+    NVMCTRL_REGS->NVMCTRL_ADDR  = address >> 1;
+    NVMCTRL_REGS->NVMCTRL_CTRLA = NVMCTRL_CTRLA_CMD_ER_Val | NVMCTRL_CTRLA_CMDEX_KEY;
+
+    // write 32 bits data into 64B page buffer
+    *paddress = data_to_write;
+
+    /* Set address and command */
+    NVMCTRL_REGS->NVMCTRL_ADDR  = address >> 1;
+    NVMCTRL_REGS->NVMCTRL_CTRLA = NVMCTRL_CTRLA_CMD_WP | NVMCTRL_CTRLA_CMDEX_KEY;
+}
+
+/******************************************************************************
+ * @brief Save node ID in shared flash memory
+ * @param Address, node_id
+ * @return
+ ******************************************************************************/
+void LuosHAL_SaveNodeID(uint16_t node_id)
+{
+    uint32_t address       = SHARED_MEMORY_ADDRESS;
+    uint32_t *paddress     = (uint32_t *)address;
+    uint32_t saved_data    = *paddress;
+    uint32_t data_tmp      = ~NODE_ID_MASK | (node_id << NODE_ID_OFFSET);
+    uint32_t data_to_write = saved_data & data_tmp;
+
+    // erase shared mem sector
+    NVMCTRL_REGS->NVMCTRL_ADDR  = address >> 1;
+    NVMCTRL_REGS->NVMCTRL_CTRLA = NVMCTRL_CTRLA_CMD_ER_Val | NVMCTRL_CTRLA_CMDEX_KEY;
+
+    // write 32 bits data into 64B page buffer
+    *paddress = data_to_write;
+
+    /* Set address and command */
+    NVMCTRL_REGS->NVMCTRL_ADDR  = address >> 1;
+    NVMCTRL_REGS->NVMCTRL_CTRLA = NVMCTRL_CTRLA_CMD_WP | NVMCTRL_CTRLA_CMDEX_KEY;
+}
+
+#ifdef BOOTLOADER_CONFIG
+/******************************************************************************
+ * @brief Get node id saved in flash memory
+ * @param Address
+ * @return node_id
+ ******************************************************************************/
+uint16_t LuosHAL_GetNodeID(void)
+{
+    uint32_t *p_start = (uint32_t *)SHARED_MEMORY_ADDRESS;
+    uint32_t data     = *p_start & NODE_ID_MASK;
+    uint16_t node_id  = (uint16_t)(data >> NODE_ID_OFFSET);
+
+    return node_id;
+}
+#endif
+
+#ifdef BOOTLOADER_CONFIG
+/******************************************************************************
+ * @brief erase sectors in flash memory
+ * @param Address, size
+ * @return
+ ******************************************************************************/
+void LuosHAL_EraseMemory(uint32_t address, uint16_t size)
+{
+    uint32_t erase_address  = APP_ADDRESS;
+    const uint32_t row_size = 256;
+
+    for (erase_address = APP_ADDRESS; erase_address < FLASH_END; erase_address += row_size)
+    {
+        // wait if NVM controller is busy
+        while ((NVMCTRL_REGS->NVMCTRL_INTFLAG & NVMCTRL_INTFLAG_READY_Msk) == 0)
+            ;
+        // erase row
+        NVMCTRL_REGS->NVMCTRL_ADDR  = erase_address >> 1;
+        NVMCTRL_REGS->NVMCTRL_CTRLA = NVMCTRL_CTRLA_CMD_ER_Val | NVMCTRL_CTRLA_CMDEX_KEY;
+        // wait during erase
+        while ((NVMCTRL_REGS->NVMCTRL_INTFLAG & NVMCTRL_INTFLAG_READY_Msk) == 0)
+            ;
+    }
+}
+#endif
+
+#ifdef BOOTLOADER_CONFIG
+/******************************************************************************
+ * @brief Save node ID in shared flash memory
+ * @param Address, node_id
+ * @return
+ ******************************************************************************/
+void LuosHAL_ProgramFlash(uint32_t address, uint16_t size, uint8_t *data)
+{
+    uint32_t *paddress  = (uint32_t *)address;
+    uint32_t data_index = 0;
+    uint8_t page_index  = 0;
+
+    // wait if NVM controller is busy
+    while ((NVMCTRL_REGS->NVMCTRL_INTFLAG & NVMCTRL_INTFLAG_READY_Msk) == 0)
+        ;
+
+    while (data_index < size)
+    {
+        // set addr in NVM register
+        NVMCTRL_REGS->NVMCTRL_ADDR = (uint32_t)&data[data_index] >> 1;
+        // fill page buffer with data bytes
+        for (page_index = 0; page_index < 16; page_index++)
+        {
+            // break if all data had been written
+            if (data_index >= size)
+                break;
+            // write data
+            *paddress = *(uint32_t *)&data[data_index];
+            // update address
+            paddress += 1;
+            data_index += 4;
+        }
+        // Set address and command
+        NVMCTRL_REGS->NVMCTRL_CTRLA = NVMCTRL_CTRLA_CMD_WP | NVMCTRL_CTRLA_CMDEX_KEY;
+        // wait during programming
+        while ((NVMCTRL_REGS->NVMCTRL_INTFLAG & NVMCTRL_INTFLAG_READY_Msk) == 0)
+            ;
+    }
+}
+#endif
+
+/******************************************************************************
+ * @brief software reboot the microprocessor
+ * @param 
+ * @return
+ ******************************************************************************/
+void LuosHAL_Reboot(void)
+{
+    // DeInit RCC and HAL
+
+    // reset systick
+    SysTick->CTRL = 0;
+    SysTick->LOAD = 0;
+    SysTick->VAL  = 0;
+
+    // reset in bootloader mode
+    NVIC_SystemReset();
+}
+
+#ifdef BOOTLOADER_CONFIG
+/******************************************************************************
+ * @brief Delay - blocking
+ * @param 
+ * @return
+ ******************************************************************************/
+void LuosHAL_Delay(uint32_t delay)
+{
+    uint32_t tickstart = LuosHAL_GetSystick();
+    uint32_t wait      = delay;
+
+    while ((LuosHAL_GetSystick() - tickstart) < wait)
+    {
+    }
+}
+#endif
