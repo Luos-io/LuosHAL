@@ -190,4 +190,12 @@
 #define ADDRESS_LAST_PAGE_FLASH FLASH_SIZE - (16 * PAGE_SIZE)
 #endif
 
+/*******************************************************************************
+ * BOOTLOADER CONFIG
+ ******************************************************************************/
+#define SHARED_MEMORY_ADDRESS 0x0800C000
+#define SHARED_FLASH_PAGE     25
+#define APP_ADDRESS           (uint32_t)0x0800C800
+#define APP_FLASH_PAGE        26
+
 #endif /* _LUOSHAL_CONFIG_H_ */

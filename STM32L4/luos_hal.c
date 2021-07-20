@@ -714,7 +714,7 @@ static void LuosHAL_FlashEraseLuosMemoryInfo(void)
 void LuosHAL_FlashWriteLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data)
 {
     // Before writing we have to erase the entire page
-    // to do that we have to backup current falues by copying it into RAM
+    // to do that we have to backup current values by copying it into RAM
     uint8_t page_backup[PAGE_SIZE];
     memcpy(page_backup, (void *)ADDRESS_ALIASES_FLASH, PAGE_SIZE);
 
@@ -745,3 +745,195 @@ void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data
 {
     memcpy(data, (void *)(addr), size);
 }
+
+/******************************************************************************
+ * @brief Set boot mode in shared flash memory
+ * @param 
+ * @return
+ ******************************************************************************/
+void LuosHAL_SetMode(uint8_t mode)
+{
+    uint64_t data_to_write = ~BOOT_MODE_MASK | (mode << BOOT_MODE_OFFSET);
+    uint32_t page_error    = 0;
+    FLASH_EraseInitTypeDef s_eraseinit;
+
+    s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
+    s_eraseinit.Page      = SHARED_MEMORY_ADDRESS / (uint32_t)PAGE_SIZE;
+    s_eraseinit.NbPages   = 1;
+
+    // Unlock flash
+    HAL_FLASH_Unlock();
+    // Erase Page
+    HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
+    // ST hal flash program function write data by uint64_t raw data
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, (uint32_t)SHARED_MEMORY_ADDRESS, data_to_write);
+    // re-lock FLASH
+    HAL_FLASH_Lock();
+}
+
+/******************************************************************************
+ * @brief Save node ID in shared flash memory
+ * @param Address, node_id
+ * @return
+ ******************************************************************************/
+void LuosHAL_SaveNodeID(uint16_t node_id)
+{
+    uint32_t page_error = 0;
+    FLASH_EraseInitTypeDef s_eraseinit;
+    uint32_t *p_start = (uint32_t *)SHARED_MEMORY_ADDRESS;
+
+    uint32_t saved_data    = *p_start;
+    uint32_t data_tmp      = ~NODE_ID_MASK | (node_id << NODE_ID_OFFSET);
+    uint32_t data_to_write = saved_data & data_tmp;
+
+    s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
+    s_eraseinit.Page      = SHARED_MEMORY_ADDRESS / (uint32_t)PAGE_SIZE;
+    s_eraseinit.NbPages   = 1;
+
+    // Unlock flash
+    HAL_FLASH_Unlock();
+    // Erase Page
+    HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
+    // ST hal flash program function write data by uint64_t raw data
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, (uint32_t)SHARED_MEMORY_ADDRESS, (uint64_t)data_to_write);
+    // re-lock FLASH
+    HAL_FLASH_Lock();
+}
+
+/******************************************************************************
+ * @brief software reboot the microprocessor
+ * @param 
+ * @return
+ ******************************************************************************/
+void LuosHAL_Reboot(void)
+{
+    // DeInit RCC and HAL
+    HAL_RCC_DeInit();
+    HAL_DeInit();
+
+    // reset systick
+    SysTick->CTRL = 0;
+    SysTick->LOAD = 0;
+    SysTick->VAL  = 0;
+
+    // reset in bootloader mode
+    NVIC_SystemReset();
+}
+
+#ifdef BOOTLOADER_CONFIG
+/******************************************************************************
+ * @brief DeInit Bootloader peripherals
+ * @param 
+ * @return
+ ******************************************************************************/
+void LuosHAL_DeInit(void)
+{
+    HAL_RCC_DeInit();
+    HAL_DeInit();
+}
+
+/******************************************************************************
+ * @brief DeInit Bootloader peripherals
+ * @param 
+ * @return
+ ******************************************************************************/
+typedef void (*pFunction)(void); /*!< Function pointer definition */
+
+void LuosHAL_JumpToApp(uint32_t app_addr)
+{
+    uint32_t JumpAddress = *(__IO uint32_t *)(app_addr + 4);
+    pFunction Jump       = (pFunction)JumpAddress;
+
+    __disable_irq();
+
+    SysTick->CTRL = 0;
+    SysTick->LOAD = 0;
+    SysTick->VAL  = 0;
+
+    SCB->VTOR = app_addr;
+
+    __set_MSP(*(__IO uint32_t *)app_addr);
+    Jump();
+}
+
+/******************************************************************************
+ * @brief Return bootloader mode saved in flash
+ * @param 
+ * @return
+ ******************************************************************************/
+uint8_t LuosHAL_GetMode(void)
+{
+    uint32_t *p_start = (uint32_t *)SHARED_MEMORY_ADDRESS;
+    uint32_t data     = (*p_start & BOOT_MODE_MASK) >> BOOT_MODE_OFFSET;
+
+    return (uint8_t)data;
+}
+
+/******************************************************************************
+ * @brief Get node id saved in flash memory
+ * @param Address
+ * @return node_id
+ ******************************************************************************/
+uint16_t LuosHAL_GetNodeID(void)
+{
+    uint32_t *p_start = (uint32_t *)SHARED_MEMORY_ADDRESS;
+    uint32_t data     = *p_start & NODE_ID_MASK;
+    uint16_t node_id  = (uint16_t)(data >> NODE_ID_OFFSET);
+
+    return node_id;
+}
+
+/******************************************************************************
+ * @brief erase sectors in flash memory
+ * @param Address, size
+ * @return
+ ******************************************************************************/
+void LuosHAL_EraseMemory(uint32_t address, uint16_t size)
+{
+    uint32_t nb_sectors_to_erase = 0;
+    uint32_t page_to_erase       = address / (uint32_t)PAGE_SIZE;
+
+    // compute number of sectors to erase
+    nb_sectors_to_erase = (FLASH_END + 1 - address) / (uint32_t)PAGE_SIZE;
+
+    uint32_t page_error = 0;
+    FLASH_EraseInitTypeDef s_eraseinit;
+    s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
+    s_eraseinit.NbPages   = 1;
+
+    int i = 0;
+    for (i = 0; i < nb_sectors_to_erase; i++)
+    {
+        s_eraseinit.Page = page_to_erase;
+
+        // Unlock flash
+        HAL_FLASH_Unlock();
+        // Erase Page
+        HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
+        // re-lock FLASH
+        HAL_FLASH_Lock();
+
+        // update page to erase
+        page_to_erase += 1;
+    }
+}
+
+/******************************************************************************
+ * @brief Save binary data in shared flash memory
+ * @param Address, size, data[]
+ * @return
+ ******************************************************************************/
+void LuosHAL_ProgramFlash(uint32_t address, uint16_t size, uint8_t *data)
+{
+    // Unlock flash
+    HAL_FLASH_Unlock();
+    // ST hal flash program function write data by uint64_t raw data
+    for (uint32_t i = 0; i < size; i += sizeof(uint64_t))
+    {
+        while (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, i + address, *(uint64_t *)(&data[i])) != HAL_OK)
+            ;
+    }
+    // re-lock FLASH
+    HAL_FLASH_Lock();
+}
+#endif
