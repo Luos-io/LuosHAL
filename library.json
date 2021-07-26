@@ -1,6 +1,6 @@
 {
     "name": "LuosHAL",
-    "keywords": "robus,network,microservice,luos,operating system,os,embedded,communication,module,ST",
+    "keywords": "robus,network,microservice,luos,operating system,os,embedded,communication,service,ST",
     "description": "Luos Hardware Abstraction Layer",
     "version": "0.3.1",
     "authors": {
