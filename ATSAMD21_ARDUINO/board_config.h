@@ -47,9 +47,12 @@
     #define TX_EN_PIN g_APinDescription[1].ulPin
     #define TX_EN_PORT g_APinDescription[1].ulPort
 
-    #define PTPB_PIN g_APinDescription[4].ulPin
-    #define PTPB_PORT g_APinDescription[4].ulPort
-    #define PTPB_IRQ  g_APinDescription[4].ulExtInt  //see EXTINT
+    #define PTPA_PIN g_APinDescription[6].ulPin
+    #define PTPA_PORT g_APinDescription[6].ulPort
+    #define PTPA_IRQ  g_APinDescription[6].ulExtInt  //see EXTINT
+    #define PTPB_PIN g_APinDescription[7].ulPin
+    #define PTPB_PORT g_APinDescription[7].ulPort
+    #define PTPB_IRQ  g_APinDescription[7].ulExtInt  //see EXTINT
 
 #endif
 
