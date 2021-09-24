@@ -51,6 +51,8 @@ Port_t PTP[NBR_PORT];
 volatile uint16_t data_size_to_transmit = 0;
 volatile uint8_t *tx_data               = 0;
 
+// timestamp variable
+static ll_timestamp_t ll_timestamp;
 /*******************************************************************************
  * Function
  ******************************************************************************/
@@ -61,7 +63,6 @@ static void LuosHAL_TimeoutInit(void);
 static void LuosHAL_GPIOInit(void);
 static void LuosHAL_FlashEraseLuosMemoryInfo(void);
 static void LuosHAL_RegisterPTP(void);
-
 /////////////////////////Luos Library Needed function///////////////////////////
 
 /******************************************************************************
@@ -77,14 +78,17 @@ void LuosHAL_Init(void)
     //IO Initialization
     LuosHAL_GPIOInit();
 
-    // Flash Initialization
+    //Flash Initialization
     LuosHAL_FlashInit();
 
-    // CRC Initialization
+    //CRC Initialization
     LuosHAL_CRCInit();
 
     //Com Initialization
     LuosHAL_ComInit(DEFAULTBAUDRATE);
+
+    // start timestamp
+    LuosHAL_StartTimestamp();
 }
 /******************************************************************************
  * @brief Luos HAL general disable IRQ
@@ -450,6 +454,42 @@ void LUOS_TIMER_IRQHANDLER()
         }
     }
 }
+
+/******************************************************************************
+ * @brief Luos GetTimestamp
+ * @param None
+ * @return uint64_t
+ ******************************************************************************/
+uint64_t LuosHAL_GetTimestamp(void)
+{
+    ll_timestamp.lower_timestamp  = (SysTick->LOAD - SysTick->VAL) * (1000000000 / MCUFREQ);
+    ll_timestamp.higher_timestamp = LuosHAL_GetSystick() - ll_timestamp.start_offset;
+
+    return ll_timestamp.higher_timestamp * 1000000 + (uint64_t)ll_timestamp.lower_timestamp;
+}
+
+/******************************************************************************
+ * @brief Luos start Timestamp
+ * @param None
+ * @return None
+ ******************************************************************************/
+void LuosHAL_StartTimestamp(void)
+{
+    ll_timestamp.start_offset = LuosHAL_GetSystick();
+}
+
+/******************************************************************************
+ * @brief Luos stop Timestamp
+ * @param None
+ * @return None
+ ******************************************************************************/
+void LuosHAL_StopTimestamp(void)
+{
+    ll_timestamp.lower_timestamp  = 0;
+    ll_timestamp.higher_timestamp = 0;
+    ll_timestamp.start_offset     = 0;
+}
+
 /******************************************************************************
  * @brief Initialisation GPIO
  * @param None
