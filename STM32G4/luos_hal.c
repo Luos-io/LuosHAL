@@ -764,6 +764,7 @@ void LuosHAL_SetMode(uint8_t mode)
     FLASH_EraseInitTypeDef s_eraseinit;
 
     s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
+    s_eraseinit.Banks     = FLASH_BANK_1;
     s_eraseinit.Page      = SHARED_MEMORY_ADDRESS / (uint32_t)PAGE_SIZE;
     s_eraseinit.NbPages   = 1;
 
@@ -793,6 +794,7 @@ void LuosHAL_SaveNodeID(uint16_t node_id)
     uint32_t data_to_write = saved_data & data_tmp;
 
     s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
+    s_eraseinit.Banks     = FLASH_BANK_1;
     s_eraseinit.Page      = SHARED_MEMORY_ADDRESS / (uint32_t)PAGE_SIZE;
     s_eraseinit.NbPages   = 1;
 
@@ -900,11 +902,12 @@ void LuosHAL_EraseMemory(uint32_t address, uint16_t size)
     uint32_t page_to_erase       = address / (uint32_t)PAGE_SIZE;
 
     // compute number of sectors to erase
-    nb_sectors_to_erase = ((uint32_t)0x08020000 - (uint32_t)0x0800C800) / (uint32_t)PAGE_SIZE;
+    nb_sectors_to_erase = ((uint32_t)0x08020000 - (uint32_t)address) / (uint32_t)PAGE_SIZE;
 
     uint32_t page_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
     s_eraseinit.TypeErase = FLASH_TYPEERASE_PAGES;
+    s_eraseinit.Banks     = FLASH_BANK_1;
     s_eraseinit.NbPages   = 1;
 
     int i = 0;
