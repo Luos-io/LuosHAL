@@ -859,6 +859,9 @@ void LuosHAL_JumpToApp(uint32_t app_addr)
     SysTick->VAL  = 0;
 
     __set_MSP(*(__IO uint32_t *)app_addr);
+
+    __enable_irq();
+
     Jump();
 }
 
