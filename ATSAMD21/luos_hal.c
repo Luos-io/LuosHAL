@@ -14,9 +14,6 @@
 
 //MCU dependencies this HAL is for family Atmel ATSAMD21 you can find
 
-#ifdef SELFTEST
-#include "selftest.h"
-#endif
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -609,9 +606,6 @@ void PINOUT_IRQHANDLER()
             }
         }
     }
-#ifdef SELFTEST
-    selftest_SetPtpFlag();
-#endif
 }
 /******************************************************************************
  * @brief Set PTP for Detection on branch

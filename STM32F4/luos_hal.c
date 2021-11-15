@@ -21,9 +21,6 @@
 #include "stm32f4xx_ll_dma.h"
 #include "stm32f4xx_ll_system.h"
 
-#ifdef SELFTEST
-#include "selftest.h"
-#endif
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -586,9 +583,6 @@ void PINOUT_IRQHANDLER(uint16_t GPIO_Pin)
             }
         }
     }
-#ifdef SELFTEST
-    selftest_SetPtpFlag();
-#endif
 }
 /******************************************************************************
  * @brief Set PTP for Detection on branch
