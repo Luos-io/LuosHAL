@@ -14,17 +14,17 @@
 
 #define DISABLE 0x00
 
-//If your MCU do not Have DMA for tx transmit define USE_TX_IT
-//If your MCU have CRC polynome 16 #define USE_CRC_HW 1 else #define USE_CRC_HW 0
+// If your MCU do not Have DMA for tx transmit define USE_TX_IT
+// If your MCU have CRC polynome 16 #define USE_CRC_HW 1 else #define USE_CRC_HW 0
 #ifndef USE_CRC_HW
 #define USE_CRC_HW 0
 #endif
 
 #ifndef MCUFREQ
-#define MCUFREQ 168000000 //MCU frequence 168000000
+#define MCUFREQ 168000000 // MCU frequence 168000000
 #endif
 #ifndef TIMERDIV
-#define TIMERDIV 2 //clock divider for timer clock chosen 2
+#define TIMERDIV 2 // clock divider for timer clock chosen 2
 #endif
 
 /*******************************************************************************
@@ -39,7 +39,7 @@
     } while (0U)
 #endif
 
-//PTP pin definition
+// PTP pin definition
 #ifndef PTPA_PIN
 #define PTPA_PIN GPIO_PIN_5
 #endif
@@ -60,7 +60,7 @@
 #define PTPB_IRQ EXTI4_IRQn
 #endif
 
-//COM pin definition
+// COM pin definition
 #ifndef TX_LOCK_DETECT_PIN
 #define TX_LOCK_DETECT_PIN GPIO_PIN_10
 #endif

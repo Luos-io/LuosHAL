@@ -14,17 +14,17 @@
 
 #define DISABLE 0x00
 
-//If your MCU do not Have DMA for tx transmit #define USE_TX_IT
-//If your MCU have CRC polynome 16 #define USE_CRC_HW 1 else #define USE_CRC_HW 0
+// If your MCU do not Have DMA for tx transmit #define USE_TX_IT
+// If your MCU have CRC polynome 16 #define USE_CRC_HW 1 else #define USE_CRC_HW 0
 #ifndef USE_CRC_HW
 #define USE_CRC_HW 0
 #endif
 
 #ifndef MCUFREQ
-#define MCUFREQ 48000000 //MCU frequence
+#define MCUFREQ 48000000 // MCU frequence
 #endif
 #ifndef TIMERDIV
-#define TIMERDIV 1 //clock divider for timer clock chosen
+#define TIMERDIV 1 // clock divider for timer clock chosen
 #endif
 /*******************************************************************************
  * PINOUT CONFIG
@@ -39,7 +39,7 @@
     } while (0U)
 #endif
 
-//PTP pin definition
+// PTP pin definition
 #ifndef PTPA_PIN
 #define PTPA_PIN 8
 #endif
@@ -47,7 +47,7 @@
 #define PTPA_PORT 1
 #endif
 #ifndef PTPA_IRQ
-#define PTPA_IRQ 8 //see EXTINT
+#define PTPA_IRQ 8 // see EXTINT
 #endif
 
 #ifndef PTPB_PIN
@@ -57,10 +57,10 @@
 #define PTPB_PORT 1
 #endif
 #ifndef PTPB_IRQ
-#define PTPB_IRQ 9 //see EXTINT
+#define PTPB_IRQ 9 // see EXTINT
 #endif
 
-//COM pin definition
+// COM pin definition
 #ifndef TX_LOCK_DETECT_PIN
 #define TX_LOCK_DETECT_PIN DISABLE
 #endif
@@ -95,11 +95,11 @@
 #define COM_TX_AF MUX_PA04D_SERCOM0_PAD0
 #endif
 #ifndef COM_TX_POS
-#define COM_TX_POS 2 //PAD0
+#define COM_TX_POS 2 // PAD0
 #endif
 
 #ifndef COM_RX_PIN
-#define COM_RX_PIN 5 //this pin should pin pull up to vcc if no internal pull up
+#define COM_RX_PIN 5 // this pin should pin pull up to vcc if no internal pull up
 #endif
 #ifndef COM_RX_PORT
 #define COM_RX_PORT 0
@@ -108,7 +108,7 @@
 #define COM_RX_AF MUX_PA05D_SERCOM0_PAD1
 #endif
 #ifndef COM_RX_POS
-#define COM_RX_POS 1 //PAD1
+#define COM_RX_POS 1 // PAD1
 #endif
 
 #ifndef PINOUT_IRQHANDLER

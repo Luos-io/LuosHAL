@@ -10,17 +10,17 @@
 #ifndef _LUOSHAL_CONFIG_H_
 #define _LUOSHAL_CONFIG_H_
 
-//include file relative to your MCU family
+// include file relative to your MCU family
 
-//If your MCU do not Have DMA for tx transmit define USE_TX_IT
+// If your MCU do not Have DMA for tx transmit define USE_TX_IT
 
 #define DISABLE 0x00
 
 #ifndef MCUFREQ
-#define MCUFREQ //MCU frequence
+#define MCUFREQ // MCU frequence
 #endif
 #ifndef TIMERDIV
-#define TIMERDIV //clock divider for timer clock chosen
+#define TIMERDIV // clock divider for timer clock chosen
 #endif
 /*******************************************************************************
  * PINOUT CONFIG
@@ -32,7 +32,7 @@
     } while (0U)
 #endif
 
-//PTP pin definition
+// PTP pin definition
 #ifndef PTPA_PIN
 #define PTPA_PIN
 #endif
@@ -53,7 +53,7 @@
 #define PTPB_IRQ
 #endif
 
-//COM pin definition
+// COM pin definition
 #ifndef TX_LOCK_DETECT_PIN
 #define TX_LOCK_DETECT_PIN
 #endif
