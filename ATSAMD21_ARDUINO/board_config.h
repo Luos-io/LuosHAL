@@ -42,17 +42,6 @@
     #define LUOS_COM_IRQHANDLER() SERCOM5_Handler()
     #define LUOS_DMA_TRIGGER    12
 
-    #define RX_EN_PIN g_APinDescription[0].ulPin
-    #define RX_EN_PORT g_APinDescription[0].ulPort
-    #define TX_EN_PIN g_APinDescription[1].ulPin
-    #define TX_EN_PORT g_APinDescription[1].ulPort
-
-    #define PTPA_PIN g_APinDescription[6].ulPin
-    #define PTPA_PORT g_APinDescription[6].ulPort
-    #define PTPA_IRQ  g_APinDescription[6].ulExtInt  //see EXTINT
-    #define PTPB_PIN g_APinDescription[7].ulPin
-    #define PTPB_PORT g_APinDescription[7].ulPort
-    #define PTPB_IRQ  g_APinDescription[7].ulExtInt  //see EXTINT
 
 #endif
 
