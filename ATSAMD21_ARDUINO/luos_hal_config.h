@@ -13,19 +13,32 @@
 #include <board_config.h>
 #include <Arduino.h>
 
+/*
+DEFAULT LUOSHAL ARDUINO PIN CONFIGURATION
+ +------------+------------------+---------------+
+ | Pin number |     Board pin    | function name |
+ +------------+------------------+---------------+
+ |      ~     |         RX       |       RX      |
+ |      ~     |         TX       |       TX      |
+ |      2     |         D2       |      RXEN     |
+ |      3     |         D3       |      TXEN     |
+ |      6     |         D6       |      PTPA     |
+ |      7     |         D7       |      PTPB     |
+ +------------+------------------+---------------+
+*/
 #define DISABLE 0x00
 
-//If your MCU do not Have DMA for tx transmit #define USE_TX_IT
-//If your MCU have CRC polynome 16 #define USE_CRC_HW 1 else #define USE_CRC_HW 0
+// If your MCU do not Have DMA for tx transmit #define USE_TX_IT
+// If your MCU have CRC polynome 16 #define USE_CRC_HW 1 else #define USE_CRC_HW 0
 #ifndef USE_CRC_HW
 #define USE_CRC_HW 0
 #endif
 
 #ifndef MCUFREQ
-#define MCUFREQ 48000000 //MCU frequence
+#define MCUFREQ 48000000 // MCU frequence
 #endif
 #ifndef TIMERDIV
-#define TIMERDIV 1 //clock divider for timer clock chosen
+#define TIMERDIV 1 // clock divider for timer clock chosen
 #endif
 /*******************************************************************************
  * PINOUT CONFIG
@@ -39,28 +52,28 @@
     } while (0U)
 #endif
 
-//PTP pin definition
+// PTP pin definition
 #ifndef PTPA_PIN
-#define PTPA_PIN g_APinDescription[5].ulPin
+#define PTPA_PIN g_APinDescription[6].ulPin
 #endif
 #ifndef PTPA_PORT
-#define PTPA_PORT g_APinDescription[5].ulPort
+#define PTPA_PORT g_APinDescription[6].ulPort
 #endif
 #ifndef PTPA_IRQ
-#define PTPA_IRQ g_APinDescription[5].ulExtInt //see EXTINT
+#define PTPA_IRQ g_APinDescription[6].ulExtInt // see EXTINT
 #endif
 
 #ifndef PTPB_PIN
-#define PTPB_PIN g_APinDescription[6].ulPin
+#define PTPB_PIN g_APinDescription[7].ulPin
 #endif
 #ifndef PTPB_PORT
-#define PTPB_PORT g_APinDescription[6].ulPort
+#define PTPB_PORT g_APinDescription[7].ulPort
 #endif
 #ifndef PTPB_IRQ
-#define PTPB_IRQ g_APinDescription[6].ulExtInt //see EXTINT
+#define PTPB_IRQ g_APinDescription[7].ulExtInt // see EXTINT
 #endif
 
-//COM pin definition
+// COM pin definition
 #ifndef TX_LOCK_DETECT_PIN
 #define TX_LOCK_DETECT_PIN DISABLE
 #endif
@@ -95,11 +108,11 @@
 #define COM_TX_AF g_APinDescription[PIN_SERIAL1_TX].ulPinType
 #endif
 #ifndef COM_TX_POS
-#define COM_TX_POS 1 //PAD2
+#define COM_TX_POS 1 // PAD2
 #endif
 
 #ifndef COM_RX_PIN
-#define COM_RX_PIN g_APinDescription[PIN_SERIAL1_RX].ulPin //this pin should pin pull up to vcc if no internal pull up
+#define COM_RX_PIN g_APinDescription[PIN_SERIAL1_RX].ulPin // this pin should pin pull up to vcc if no internal pull up
 #endif
 #ifndef COM_RX_PORT
 #define COM_RX_PORT g_APinDescription[PIN_SERIAL1_RX].ulPort
@@ -108,7 +121,7 @@
 #define COM_RX_AF g_APinDescription[PIN_SERIAL1_RX].ulPinType
 #endif
 #ifndef COM_RX_POS
-#define COM_RX_POS 3 //PAD3
+#define COM_RX_POS 3 // PAD3
 #endif
 
 #ifndef PINOUT_IRQHANDLER

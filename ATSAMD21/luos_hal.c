@@ -12,11 +12,8 @@
 #include "reception.h"
 #include "context.h"
 
-//MCU dependencies this HAL is for family Atmel ATSAMD21 you can find
+// MCU dependencies this HAL is for family Atmel ATSAMD21 you can find
 
-#ifdef SELFTEST
-#include "selftest.h"
-#endif
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -64,10 +61,10 @@ static void LuosHAL_RegisterPTP(void);
  ******************************************************************************/
 void LuosHAL_Init(void)
 {
-    //Systick Initialization
+    // Systick Initialization
     LuosHAL_SystickInit();
 
-    //IO Initialization
+    // IO Initialization
     LuosHAL_GPIOInit();
 
     // Flash Initialization
@@ -76,7 +73,7 @@ void LuosHAL_Init(void)
     // CRC Initialization
     LuosHAL_CRCInit();
 
-    //Com Initialization
+    // Com Initialization
     LuosHAL_ComInit(DEFAULTBAUDRATE);
 }
 /******************************************************************************
@@ -134,7 +131,7 @@ void SysTick_Handler(void)
 void LuosHAL_ComInit(uint32_t Baudrate)
 {
     uint32_t baud = 0;
-    //initialize clock
+    // initialize clock
     LUOS_COM_CLOCK_ENABLE();
 
     /* Disable the USART before configurations */
@@ -144,13 +141,13 @@ void LuosHAL_ComInit(uint32_t Baudrate)
     baud                            = 65536 - ((uint64_t)65536 * 16 * Baudrate) / MCUFREQ;
     LUOS_COM->USART_INT.SERCOM_BAUD = SERCOM_USART_INT_BAUD_BAUD(baud);
 
-    //Configures USART Clock Mode/ TXPO and RXPO/ Data Order/ Standby Mode/ Sampling rate/ IBON
+    // Configures USART Clock Mode/ TXPO and RXPO/ Data Order/ Standby Mode/ Sampling rate/ IBON
     LUOS_COM->USART_INT.SERCOM_CTRLA = SERCOM_USART_INT_CTRLA_MODE_USART_INT_CLK | SERCOM_USART_INT_CTRLA_RXPO(COM_RX_POS)
                                        | SERCOM_USART_INT_CTRLA_TXPO(COM_TX_POS) | SERCOM_USART_INT_CTRLA_DORD_Msk
                                        | SERCOM_USART_INT_CTRLA_IBON_Msk | SERCOM_USART_INT_CTRLA_FORM(0x0)
                                        | SERCOM_USART_INT_CTRLA_SAMPR(0);
 
-    //Configures RXEN/ TXEN/ CHSIZE/ Parity/ Stop bits
+    // Configures RXEN/ TXEN/ CHSIZE/ Parity/ Stop bits
     LUOS_COM->USART_INT.SERCOM_CTRLB = SERCOM_USART_INT_CTRLB_CHSIZE_8_BIT | SERCOM_USART_INT_CTRLB_SBMODE_1_BIT
                                        | SERCOM_USART_INT_CTRLB_RXEN_Msk | SERCOM_USART_INT_CTRLB_TXEN_Msk
                                        | SERCOM_USART_INT_CTRLB_SFDE_Msk;
@@ -171,7 +168,7 @@ void LuosHAL_ComInit(uint32_t Baudrate)
     NVIC_SetPriority(LUOS_COM_IRQ, 3);
     NVIC_EnableIRQ(LUOS_COM_IRQ);
 
-    //Timeout Initialization
+    // Timeout Initialization
     timoutclockcnt = MCUFREQ / Baudrate;
     LuosHAL_TimeoutInit();
 
@@ -181,7 +178,7 @@ void LuosHAL_ComInit(uint32_t Baudrate)
     LUOS_DMA->DMAC_BASEADDR        = (uint32_t)&descriptor_section;
     LUOS_DMA->DMAC_WRBADDR         = (uint32_t)&write_back_section;
     LUOS_DMA->DMAC_PRICTRL0        = DMAC_PRICTRL0_LVLPRI0(1UL) | DMAC_PRICTRL0_RRLVLEN0_Msk | DMAC_PRICTRL0_LVLPRI1(1UL) | DMAC_PRICTRL0_RRLVLEN1_Msk | DMAC_PRICTRL0_LVLPRI2(1UL) | DMAC_PRICTRL0_RRLVLEN2_Msk | DMAC_PRICTRL0_LVLPRI3(1UL) | DMAC_PRICTRL0_RRLVLEN3_Msk;
-    LUOS_DMA->DMAC_CHID            = LUOS_DMA_CHANNEL; //DMA Channel
+    LUOS_DMA->DMAC_CHID            = LUOS_DMA_CHANNEL; // DMA Channel
     LUOS_DMA->DMAC_CHCTRLB         = DMAC_CHCTRLB_TRIGACT(2) | DMAC_CHCTRLB_TRIGSRC(LUOS_DMA_TRIGGER) | DMAC_CHCTRLB_LVL(0);
     descriptor_section.DMAC_BTCTRL = DMAC_BTCTRL_BLOCKACT_INT | DMAC_BTCTRL_BEATSIZE_BYTE | DMAC_BTCTRL_VALID_Msk | DMAC_BTCTRL_SRCINC_Msk;
     LUOS_DMA->DMAC_CTRL            = DMAC_CTRL_DMAENABLE_Msk | DMAC_CTRL_LVLEN0_Msk | DMAC_CTRL_LVLEN1_Msk | DMAC_CTRL_LVLEN2_Msk | DMAC_CTRL_LVLEN3_Msk;
@@ -196,29 +193,29 @@ void LuosHAL_SetTxState(uint8_t Enable)
 {
     if (Enable == true)
     {
-        PORT_REGS->GROUP[COM_TX_PORT].PORT_PINCFG[COM_TX_PIN] &= ~PORT_PINCFG_PULLEN_Msk; //TX  push pull
+        PORT_REGS->GROUP[COM_TX_PORT].PORT_PINCFG[COM_TX_PIN] &= ~PORT_PINCFG_PULLEN_Msk; // TX  push pull
         if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
         {
-            PORT_REGS->GROUP[TX_EN_PORT].PORT_OUTSET = (1 << TX_EN_PIN); //enable Tx
+            PORT_REGS->GROUP[TX_EN_PORT].PORT_OUTSET = (1 << TX_EN_PIN); // enable Tx
         }
     }
     else
     {
-        PORT_REGS->GROUP[COM_TX_PORT].PORT_PINCFG[COM_TX_PIN] |= PORT_PINCFG_PULLEN_Msk; //Tx Open drain
+        PORT_REGS->GROUP[COM_TX_PORT].PORT_PINCFG[COM_TX_PIN] |= PORT_PINCFG_PULLEN_Msk; // Tx Open drain
         if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
         {
-            PORT_REGS->GROUP[TX_EN_PORT].PORT_OUTCLR = (1 << TX_EN_PIN); //disable Tx
+            PORT_REGS->GROUP[TX_EN_PORT].PORT_OUTCLR = (1 << TX_EN_PIN); // disable Tx
         }
 #ifdef USE_TX_IT
         // Stop current transmit operation
         data_size_to_transmit = 0;
         // Disable Transmission empty buffer interrupt
-        LUOS_COM->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_DRE_Msk; //disable IT
+        LUOS_COM->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_DRE_Msk; // disable IT
 #else
         LUOS_DMA->DMAC_CHCTRLA &= ~DMAC_CHCTRLA_ENABLE_Msk;
 #endif
         // Disable Transmission complete interrupt
-        LUOS_COM->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_TXC_Msk; //disable IT
+        LUOS_COM->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_TXC_Msk; // disable IT
         LUOS_COM->USART_INT.SERCOM_INTFLAG  = SERCOM_USART_INT_INTFLAG_RXS_Msk;
     }
 }
@@ -234,7 +231,7 @@ void LuosHAL_SetRxState(uint8_t Enable)
     {
         while ((LUOS_COM->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_RXC_Msk) == SERCOM_USART_INT_INTFLAG_RXC_Msk)
         {
-            LUOS_COM->USART_INT.SERCOM_DATA; //clear data buffer
+            LUOS_COM->USART_INT.SERCOM_DATA; // clear data buffer
         }
         LUOS_COM->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_RXC_Msk;
     }
@@ -256,7 +253,7 @@ void LUOS_COM_IRQHANDLER()
     // reception management
     if (((LUOS_COM->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_RXC_Msk) == SERCOM_USART_INT_INTFLAG_RXC_Msk) && ((LUOS_COM->USART_INT.SERCOM_INTENSET & SERCOM_USART_INT_INTENSET_RXC_Msk) == SERCOM_USART_INT_INTENSET_RXC_Msk))
     {
-        //clean start bit detection
+        // clean start bit detection
         uint8_t data = LUOS_COM->USART_INT.SERCOM_DATA;
         ctx.rx.callback(&data);
         if (data_size_to_transmit == 0)
@@ -279,8 +276,8 @@ void LUOS_COM_IRQHANDLER()
         LuosHAL_SetTxState(false);
         LuosHAL_SetRxState(true);
         // Disable transmission complete IRQ
-        LUOS_COM->USART_INT.SERCOM_INTFLAG  = SERCOM_USART_INT_INTFLAG_TXC_Msk;  //clear flag
-        LUOS_COM->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_TXC_Msk; //disable IT
+        LUOS_COM->USART_INT.SERCOM_INTFLAG  = SERCOM_USART_INT_INTFLAG_TXC_Msk;  // clear flag
+        LUOS_COM->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_TXC_Msk; // disable IT
     }
 #ifdef USE_TX_IT
     else if (((LUOS_COM->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) == SERCOM_USART_INT_INTFLAG_DRE_Msk) && ((LUOS_COM->USART_INT.SERCOM_INTENSET & SERCOM_USART_INT_INTENSET_DRE_Msk) == SERCOM_USART_INT_INTENSET_DRE_Msk))
@@ -292,10 +289,10 @@ void LUOS_COM_IRQHANDLER()
         {
             // Transmission complete, stop loading data and watch for the end of transmission
             // Disable Transmission empty buffer interrupt
-            LUOS_COM->USART_INT.SERCOM_INTFLAG  = SERCOM_USART_INT_INTFLAG_DRE_Msk;  //clear flag
-            LUOS_COM->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_DRE_Msk; //disable IT
+            LUOS_COM->USART_INT.SERCOM_INTFLAG  = SERCOM_USART_INT_INTFLAG_DRE_Msk;  // clear flag
+            LUOS_COM->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_DRE_Msk; // disable IT
             // Enable Transmission complete interrupt
-            LUOS_COM->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_TXC_Msk; //disable IT
+            LUOS_COM->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_TXC_Msk; // disable IT
         }
     }
 #endif
@@ -319,24 +316,24 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     {
         // Start the data buffer transmission
         // **** NO DMA
-        //Copy the data pointer globally alowing to keep it and run the transmission.
+        // Copy the data pointer globally alowing to keep it and run the transmission.
         tx_data = data;
 #ifdef USE_TX_IT
         // Send the first byte
         LUOS_COM->USART_INT.SERCOM_DATA = *(tx_data++);
         // Enable Transmission empty buffer interrupt to transmit next datas
-        LUOS_COM->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_DRE_Msk; //enable IT
+        LUOS_COM->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_DRE_Msk; // enable IT
         // Disable Transmission complete interrupt
-        LUOS_COM->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_TXC_Msk; //disable IT
+        LUOS_COM->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_TXC_Msk; // disable IT
 #else
-        data_size_to_transmit           = 0; //to not check IT TC during collision
+        data_size_to_transmit           = 0; // to not check IT TC during collision
         descriptor_section.DMAC_SRCADDR = (uint32_t)(data + size);
         descriptor_section.DMAC_DSTADDR = (uint32_t)&LUOS_COM->USART_INT.SERCOM_DATA;
         descriptor_section.DMAC_BTCNT   = size;
         // Enable TX
         LuosHAL_SetTxState(true);
         LUOS_DMA->DMAC_CHCTRLA |= DMAC_CHCTRLA_ENABLE_Msk;
-        LUOS_COM->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_TXC_Msk; //enable IT
+        LUOS_COM->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_TXC_Msk; // enable IT
 #endif
     }
     else
@@ -350,7 +347,7 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
         // Transmit the only byte we have
         LUOS_COM->USART_INT.SERCOM_DATA = *data;
         // Enable Transmission complete interrupt because we only have one.
-        LUOS_COM->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_TXC_Msk; //enable IT
+        LUOS_COM->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_TXC_Msk; // enable IT
     }
     LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
 }
@@ -363,7 +360,7 @@ void LuosHAL_SetRxDetecPin(uint8_t Enable)
 {
     if (TX_LOCK_DETECT_IRQ != DISABLE)
     {
-        EIC_REGS->EIC_INTFLAG = (1 << TX_LOCK_DETECT_IRQ); //clear IT flag
+        EIC_REGS->EIC_INTFLAG = (1 << TX_LOCK_DETECT_IRQ); // clear IT flag
         if (Enable == true)
         {
             EIC_REGS->EIC_INTENSET = (1 << TX_LOCK_DETECT_IRQ); // enable IT
@@ -414,7 +411,7 @@ uint8_t LuosHAL_GetTxLockState(void)
  ******************************************************************************/
 static void LuosHAL_TimeoutInit(void)
 {
-    //initialize clock
+    // initialize clock
     LUOS_TIMER_CLOCK_ENABLE();
 
     LUOS_TIMER->COUNT16.TC_CTRLA = TC_CTRLA_RESETVALUE;
@@ -440,7 +437,7 @@ static void LuosHAL_TimeoutInit(void)
 void LuosHAL_ResetTimeout(uint16_t nbrbit)
 {
     NVIC_ClearPendingIRQ(LUOS_TIMER_IRQ);                // clear IT pending
-    LUOS_TIMER->COUNT16.TC_INTFLAG = TC_INTFLAG_OVF_Msk; //clear flag
+    LUOS_TIMER->COUNT16.TC_INTFLAG = TC_INTFLAG_OVF_Msk; // clear flag
     LUOS_TIMER->COUNT16.TC_CTRLA &= ~TC_CTRLA_ENABLE_Msk;
     if (nbrbit != 0)
     {
@@ -457,7 +454,7 @@ void LUOS_TIMER_IRQHANDLER()
 {
     if ((LUOS_TIMER->COUNT16.TC_INTFLAG & TC_INTFLAG_OVF_Msk) == TC_INTFLAG_OVF_Msk)
     {
-        LUOS_TIMER->COUNT16.TC_INTFLAG = TC_INTFLAG_OVF_Msk; //clear
+        LUOS_TIMER->COUNT16.TC_INTFLAG = TC_INTFLAG_OVF_Msk; // clear
         if ((ctx.tx.lock == true) && (LuosHAL_GetTxLockState() == false))
         {
             LuosHAL_SetTxState(false);
@@ -476,33 +473,33 @@ static void LuosHAL_GPIOInit(void)
     uint32_t Position = 0;
     uint32_t Config   = 0;
 
-    //Activate Clock for PIN choosen in luosHAL
+    // Activate Clock for PIN choosen in luosHAL
     PORT_CLOCK_ENABLE();
 
     if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
     {
         /*Configure GPIO pins : RxEN_Pin */
-        PORT_REGS->GROUP[RX_EN_PORT].PORT_PINCFG[RX_EN_PIN] = PORT_PINCFG_RESETVALUE;  //no pin mux / no input /  no pull / low streght
-        PORT_REGS->GROUP[RX_EN_PORT].PORT_PINCFG[RX_EN_PIN] |= PORT_PINCFG_DRVSTR_Msk; //hight streght drive
-        PORT_REGS->GROUP[RX_EN_PORT].PORT_DIRSET = (1 << RX_EN_PIN);                   //Output
-        PORT_REGS->GROUP[RX_EN_PORT].PORT_OUTCLR = (1 << RX_EN_PIN);                   //disable Tx set output low
+        PORT_REGS->GROUP[RX_EN_PORT].PORT_PINCFG[RX_EN_PIN] = PORT_PINCFG_RESETVALUE;  // no pin mux / no input /  no pull / low streght
+        PORT_REGS->GROUP[RX_EN_PORT].PORT_PINCFG[RX_EN_PIN] |= PORT_PINCFG_DRVSTR_Msk; // hight streght drive
+        PORT_REGS->GROUP[RX_EN_PORT].PORT_DIRSET = (1 << RX_EN_PIN);                   // Output
+        PORT_REGS->GROUP[RX_EN_PORT].PORT_OUTCLR = (1 << RX_EN_PIN);                   // disable Tx set output low
     }
 
     if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
     {
         /*Configure GPIO pins : TxEN_Pin */
-        PORT_REGS->GROUP[TX_EN_PORT].PORT_PINCFG[TX_EN_PIN] = PORT_PINCFG_RESETVALUE;  //no pin mux / no input /  no pull / low streght
-        PORT_REGS->GROUP[TX_EN_PORT].PORT_PINCFG[TX_EN_PIN] |= PORT_PINCFG_DRVSTR_Msk; //hight streght drive
-        PORT_REGS->GROUP[TX_EN_PORT].PORT_DIRSET = (1 << TX_EN_PIN);                   //Output
-        PORT_REGS->GROUP[TX_EN_PORT].PORT_OUTCLR = (1 << TX_EN_PIN);                   //disable Tx set output low
+        PORT_REGS->GROUP[TX_EN_PORT].PORT_PINCFG[TX_EN_PIN] = PORT_PINCFG_RESETVALUE;  // no pin mux / no input /  no pull / low streght
+        PORT_REGS->GROUP[TX_EN_PORT].PORT_PINCFG[TX_EN_PIN] |= PORT_PINCFG_DRVSTR_Msk; // hight streght drive
+        PORT_REGS->GROUP[TX_EN_PORT].PORT_DIRSET = (1 << TX_EN_PIN);                   // Output
+        PORT_REGS->GROUP[TX_EN_PORT].PORT_OUTCLR = (1 << TX_EN_PIN);                   // disable Tx set output low
     }
 
     /*Configure GPIO pins : TX_LOCK_DETECT_Pin */
     if ((TX_LOCK_DETECT_PIN != DISABLE) || (TX_LOCK_DETECT_PORT != DISABLE))
     {
-        PORT_REGS->GROUP[TX_LOCK_DETECT_PORT].PORT_PINCFG[TX_LOCK_DETECT_PIN] = PORT_PINCFG_RESETVALUE; //no pin mux / no input /  no pull / low streght
-        PORT_REGS->GROUP[TX_LOCK_DETECT_PORT].PORT_PINCFG[TX_LOCK_DETECT_PIN] |= PORT_PINCFG_INEN_Msk;  //enable input
-        PORT_REGS->GROUP[TX_LOCK_DETECT_PORT].PORT_OUTSET = (1 << TX_LOCK_DETECT_PIN);                  //pull up
+        PORT_REGS->GROUP[TX_LOCK_DETECT_PORT].PORT_PINCFG[TX_LOCK_DETECT_PIN] = PORT_PINCFG_RESETVALUE; // no pin mux / no input /  no pull / low streght
+        PORT_REGS->GROUP[TX_LOCK_DETECT_PORT].PORT_PINCFG[TX_LOCK_DETECT_PIN] |= PORT_PINCFG_INEN_Msk;  // enable input
+        PORT_REGS->GROUP[TX_LOCK_DETECT_PORT].PORT_OUTSET = (1 << TX_LOCK_DETECT_PIN);                  // pull up
         if (TX_LOCK_DETECT_IRQ != DISABLE)
         {
             PORT_REGS->GROUP[TX_LOCK_DETECT_PORT].PORT_PMUX[TX_LOCK_DETECT_PIN >> 1] |= (0 << (4 * (TX_LOCK_DETECT_PIN % 2)));
@@ -517,24 +514,24 @@ static void LuosHAL_GPIOInit(void)
                 Position = (TX_LOCK_DETECT_IRQ - 8) << 2;
             }
         }
-        EIC_REGS->EIC_CONFIG[Config] &= ~(EIC_CONFIG_SENSE0_Msk << Position);   //reset sense mode
+        EIC_REGS->EIC_CONFIG[Config] &= ~(EIC_CONFIG_SENSE0_Msk << Position);   // reset sense mode
         EIC_REGS->EIC_CONFIG[Config] |= EIC_CONFIG_SENSE0_FALL_Val << Position; // Falling EDGE
-        EIC_REGS->EIC_INTFLAG  = (1 << TX_LOCK_DETECT_IRQ);                     //clear IT flag
+        EIC_REGS->EIC_INTFLAG  = (1 << TX_LOCK_DETECT_IRQ);                     // clear IT flag
         EIC_REGS->EIC_INTENCLR = (1 << TX_LOCK_DETECT_IRQ);
     }
 
     /*Configure GPIO pin : TxPin */
-    PORT_REGS->GROUP[COM_TX_PORT].PORT_PINCFG[COM_TX_PIN] = PORT_PINCFG_RESETVALUE; //no pin mux / no input /  no pull / low streght
+    PORT_REGS->GROUP[COM_TX_PORT].PORT_PINCFG[COM_TX_PIN] = PORT_PINCFG_RESETVALUE; // no pin mux / no input /  no pull / low streght
     PORT_REGS->GROUP[COM_TX_PORT].PORT_PINCFG[COM_TX_PIN] |= PORT_PINCFG_PULLEN_Msk;
-    PORT_REGS->GROUP[COM_TX_PORT].PORT_PINCFG[COM_TX_PIN] |= PORT_PINCFG_PMUXEN_Msk;                   //mux en
-    PORT_REGS->GROUP[COM_TX_PORT].PORT_PMUX[COM_TX_PIN >> 1] |= (COM_TX_AF << (4 * (COM_TX_PIN % 2))); //mux to sercom
+    PORT_REGS->GROUP[COM_TX_PORT].PORT_PINCFG[COM_TX_PIN] |= PORT_PINCFG_PMUXEN_Msk;                   // mux en
+    PORT_REGS->GROUP[COM_TX_PORT].PORT_PMUX[COM_TX_PIN >> 1] |= (COM_TX_AF << (4 * (COM_TX_PIN % 2))); // mux to sercom
 
     /*Configure GPIO pin : RxPin */
-    PORT_REGS->GROUP[COM_RX_PORT].PORT_PINCFG[COM_RX_PIN] = PORT_PINCFG_RESETVALUE;                    //no pin mux / no input /  no pull / low streght
-    PORT_REGS->GROUP[COM_RX_PORT].PORT_PINCFG[COM_RX_PIN] |= PORT_PINCFG_PMUXEN_Msk;                   //mux en
-    PORT_REGS->GROUP[COM_RX_PORT].PORT_PMUX[COM_RX_PIN >> 1] |= (COM_TX_AF << (4 * (COM_RX_PIN % 2))); //mux to sercom
+    PORT_REGS->GROUP[COM_RX_PORT].PORT_PINCFG[COM_RX_PIN] = PORT_PINCFG_RESETVALUE;                    // no pin mux / no input /  no pull / low streght
+    PORT_REGS->GROUP[COM_RX_PORT].PORT_PINCFG[COM_RX_PIN] |= PORT_PINCFG_PMUXEN_Msk;                   // mux en
+    PORT_REGS->GROUP[COM_RX_PORT].PORT_PMUX[COM_RX_PIN >> 1] |= (COM_TX_AF << (4 * (COM_RX_PIN % 2))); // mux to sercom
 
-    //configure PTP
+    // configure PTP
     LuosHAL_RegisterPTP();
     for (uint8_t i = 0; i < NBR_PORT; i++) /*Configure GPIO pins : PTP_Pin */
     {
@@ -546,7 +543,7 @@ static void LuosHAL_GPIOInit(void)
     NVIC_SetPriority(EIC_IRQn, 3);
     NVIC_EnableIRQ(EIC_IRQn);
 
-    //Enable EIC interrupt
+    // Enable EIC interrupt
     EIC_REGS->EIC_CTRL |= EIC_CTRL_ENABLE_Msk;
 }
 /******************************************************************************
@@ -609,9 +606,6 @@ void PINOUT_IRQHANDLER()
             }
         }
     }
-#ifdef SELFTEST
-    selftest_SetPtpFlag();
-#endif
 }
 /******************************************************************************
  * @brief Set PTP for Detection on branch
@@ -624,10 +618,10 @@ void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr)
     uint32_t Config   = 0;
 
     // Pull Down / IT mode / Rising Edge
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] = PORT_PINCFG_RESETVALUE;  //no pin mux / no input /  no pull / low streght
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PMUXEN_Msk; //mux en
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PULLEN_Msk; //pull en
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_OUTCLR = (1 << PTP[PTPNbr].Pin);                   //pull down
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] = PORT_PINCFG_RESETVALUE;  // no pin mux / no input /  no pull / low streght
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PMUXEN_Msk; // mux en
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PULLEN_Msk; // pull en
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_OUTCLR = (1 << PTP[PTPNbr].Pin);                   // pull down
     if (PTP[PTPNbr].Irq < 8)
     {
         Config   = 0;
@@ -638,9 +632,9 @@ void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr)
         Config   = 1;
         Position = (PTP[PTPNbr].Irq - 8) << 2;
     }
-    EIC_REGS->EIC_CONFIG[Config] &= ~(EIC_CONFIG_SENSE0_Msk << Position);   //reset sense mode
+    EIC_REGS->EIC_CONFIG[Config] &= ~(EIC_CONFIG_SENSE0_Msk << Position);   // reset sense mode
     EIC_REGS->EIC_CONFIG[Config] |= EIC_CONFIG_SENSE0_RISE_Val << Position; // Rising EDGE
-    EIC_REGS->EIC_INTFLAG  = (1 << PTP[PTPNbr].Irq);                        //clear IT flag
+    EIC_REGS->EIC_INTFLAG  = (1 << PTP[PTPNbr].Irq);                        // clear IT flag
     EIC_REGS->EIC_INTENSET = (1 << PTP[PTPNbr].Irq);                        // enable IT
 }
 /******************************************************************************
@@ -653,10 +647,10 @@ void LuosHAL_SetPTPReverseState(uint8_t PTPNbr)
     uint32_t Position = 0;
     uint32_t Config   = 0;
     // Pull Down / IT mode / Falling Edge
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] = PORT_PINCFG_RESETVALUE;  //no pin mux / no input /  no pull / low streght
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PMUXEN_Msk; //mux en
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PULLEN_Msk; //pull en
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_OUTCLR = (1 << PTP[PTPNbr].Pin);                   //pull down
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] = PORT_PINCFG_RESETVALUE;  // no pin mux / no input /  no pull / low streght
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PMUXEN_Msk; // mux en
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PULLEN_Msk; // pull en
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_OUTCLR = (1 << PTP[PTPNbr].Pin);                   // pull down
     if (PTP[PTPNbr].Irq < 8)
     {
         Config   = 0;
@@ -667,9 +661,9 @@ void LuosHAL_SetPTPReverseState(uint8_t PTPNbr)
         Config   = 1;
         Position = (PTP[PTPNbr].Irq - 8) << 2;
     }
-    EIC_REGS->EIC_CONFIG[Config] &= ~(EIC_CONFIG_SENSE0_Msk << Position);   //reset sense mode
+    EIC_REGS->EIC_CONFIG[Config] &= ~(EIC_CONFIG_SENSE0_Msk << Position);   // reset sense mode
     EIC_REGS->EIC_CONFIG[Config] |= EIC_CONFIG_SENSE0_FALL_Val << Position; // Falling EDGE
-    EIC_REGS->EIC_INTFLAG  = (1 << PTP[PTPNbr].Irq);                        //clear IT flag
+    EIC_REGS->EIC_INTFLAG  = (1 << PTP[PTPNbr].Irq);                        // clear IT flag
     EIC_REGS->EIC_INTENSET = (1 << PTP[PTPNbr].Irq);                        // enable IT
 }
 /******************************************************************************
@@ -681,11 +675,11 @@ void LuosHAL_PushPTP(uint8_t PTPNbr)
 {
     // Pull Down / Output mode
     EIC_REGS->EIC_INTENCLR                                          = (1 << PTP[PTPNbr].Irq); // disable IT
-    EIC_REGS->EIC_INTFLAG                                           = (1 << PTP[PTPNbr].Irq); //clear IT flag
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] = PORT_PINCFG_RESETVALUE; //no pin mux / no input /  no pull / low streght
-    //PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PULLEN_Msk; //pull en
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_DIRSET = (1 << PTP[PTPNbr].Pin); //Output
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_OUTSET = (1 << PTP[PTPNbr].Pin); //pull down
+    EIC_REGS->EIC_INTFLAG                                           = (1 << PTP[PTPNbr].Irq); // clear IT flag
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] = PORT_PINCFG_RESETVALUE; // no pin mux / no input /  no pull / low streght
+    // PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PULLEN_Msk; //pull en
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_DIRSET = (1 << PTP[PTPNbr].Pin); // Output
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_OUTSET = (1 << PTP[PTPNbr].Pin); // pull down
 }
 /******************************************************************************
  * @brief Get PTP line
@@ -696,12 +690,12 @@ uint8_t LuosHAL_GetPTPState(uint8_t PTPNbr)
 {
     // Pull Down / Input mode
     EIC_REGS->EIC_INTENCLR                                          = (1 << PTP[PTPNbr].Irq);  // disable IT
-    EIC_REGS->EIC_INTFLAG                                           = (1 << PTP[PTPNbr].Irq);  //clear IT flag
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] = PORT_PINCFG_RESETVALUE;  //no pin mux / no input /  no pull / low streght
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_INEN_Msk;   //input
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PULLEN_Msk; //pull en
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_DIRCLR = (1 << PTP[PTPNbr].Pin);                   //Output
-    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_OUTCLR = (1 << PTP[PTPNbr].Pin);                   //pull down
+    EIC_REGS->EIC_INTFLAG                                           = (1 << PTP[PTPNbr].Irq);  // clear IT flag
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] = PORT_PINCFG_RESETVALUE;  // no pin mux / no input /  no pull / low streght
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_INEN_Msk;   // input
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PULLEN_Msk; // pull en
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_DIRCLR = (1 << PTP[PTPNbr].Pin);                   // Output
+    PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_OUTCLR = (1 << PTP[PTPNbr].Pin);                   // pull down
     return (((PORT_REGS->GROUP[PTP[PTPNbr].Port].PORT_IN >> PTP[PTPNbr].Pin)) & 0x01);
 }
 /******************************************************************************
@@ -801,7 +795,7 @@ void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data
 
 /******************************************************************************
  * @brief Set boot mode in shared flash memory
- * @param 
+ * @param
  * @return
  ******************************************************************************/
 void LuosHAL_SetMode(uint8_t mode)
@@ -849,7 +843,7 @@ void LuosHAL_SaveNodeID(uint16_t node_id)
 
 /******************************************************************************
  * @brief software reboot the microprocessor
- * @param 
+ * @param
  * @return
  ******************************************************************************/
 void LuosHAL_Reboot(void)
@@ -868,7 +862,7 @@ void LuosHAL_Reboot(void)
 #ifdef BOOTLOADER_CONFIG
 /******************************************************************************
  * @brief DeInit Bootloader peripherals
- * @param 
+ * @param
  * @return
  ******************************************************************************/
 void LuosHAL_DeInit(void)
@@ -877,7 +871,7 @@ void LuosHAL_DeInit(void)
 
 /******************************************************************************
  * @brief DeInit Bootloader peripherals
- * @param 
+ * @param
  * @return
  ******************************************************************************/
 typedef void (*pFunction)(void); /*!< Function pointer definition */
@@ -904,7 +898,7 @@ void LuosHAL_JumpToApp(uint32_t app_addr)
 
 /******************************************************************************
  * @brief Return bootloader mode saved in flash
- * @param 
+ * @param
  * @return
  ******************************************************************************/
 uint8_t LuosHAL_GetMode(void)

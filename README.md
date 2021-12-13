@@ -38,6 +38,58 @@ Watch this video for additional details:
 
 If you have questions about a specific topic, you can refer or ask it on the [Luos' subreddit](https://www.reddit.com/r/Luos). And if you have suggestions about this documentation, don't hesitate to create pull requests.
 
+## Compatible MCU
+
+### STM32F0 family:
+- STM32F0x0
+- STM32F0x1
+- STM32F0x2 -> LuosHAL default configuration on NUCLEO-F072RB
+- STM32F0x8
+
+### STM32F4 family:
+- STM32F401
+- STM32F405/415
+- STM32F407/417
+- STM32F410 -> LuosHAL default configuration on NUCLEO-F410RB
+- STM32F411
+- STM32F412
+- STM32F413/423
+- STM32F427/437
+- STM32F429/439
+- STM32F446
+- STM32F469/479
+
+### STM32G4 family:
+- STM32G4x1->  LuosHAL default configuration on NUCLEO-G431KB
+- STM32G4x3
+- STM32G4x4
+
+### STM32L4 family:
+- STM32L4x1
+- STM32L4x2-> LuosHAL default configuration on NUCLEO-L432KC
+- STM32L4x3
+- STM32L4x5
+- STM32L4x6
+
+### ATSAMD family:
+- ATSAMD21Exx
+- ATSAMD21Gxx
+- ATSAMD21Jxx -> LuosHAL default configuration on SAMDJ18A
+
+### ARDUINO family:
+- ARDUINO_SAMD_ZERO -> LuosHAL default configuration on ARDUINO ZERO
+- ARDUINO_SAMD_MKRZERO
+- ARDUINO_SAMD_MKR1000
+- ARDUINO_SAMD_MKRWIFI1010
+- ARDUINO_SAMD_MKRFox1200
+- ARDUINO_SAMD_MKRWAN1300
+- ARDUINO_SAMD_MKRWAN1310
+- ARDUINO_SAMD_MKRGSM1400
+- ARDUINO_SAMD_MKRNB1500
+- ARDUINO_SAMD_NANO_33_IOT
+- ARDUINO_SAMD_MKRVIDOR4000
+
+
 ## Don't hesitate to read [our documentation](https://docs.luos.io), or to post your questions/issues on the [Luos' subreddit](https://www.reddit.com/r/Luos/). :books:
 
 

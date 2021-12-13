@@ -12,8 +12,8 @@
 #include "reception.h"
 #include "context.h"
 
-//MCU dependencies this HAL is for family STM32FO you can find
-//the HAL stm32cubef0 on ST web site
+// MCU dependencies this HAL is for family STM32FO you can find
+// the HAL stm32cubef0 on ST web site
 #include "stm32f0xx_ll_usart.h"
 #include "stm32f0xx_ll_gpio.h"
 #include "stm32f0xx_ll_tim.h"
@@ -21,9 +21,6 @@
 #include "stm32f0xx_ll_dma.h"
 #include "stm32f0xx_ll_system.h"
 
-#ifdef SELFTEST
-#include "selftest.h"
-#endif
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -71,10 +68,10 @@ static void LuosHAL_RegisterPTP(void);
  ******************************************************************************/
 void LuosHAL_Init(void)
 {
-    //Systick Initialization
+    // Systick Initialization
     LuosHAL_SystickInit();
 
-    //IO Initialization
+    // IO Initialization
     LuosHAL_GPIOInit();
 
     // Flash Initialization
@@ -83,7 +80,7 @@ void LuosHAL_Init(void)
     // CRC Initialization
     LuosHAL_CRCInit();
 
-    //Com Initialization
+    // Com Initialization
     LuosHAL_ComInit(DEFAULTBAUDRATE);
 }
 /******************************************************************************
@@ -149,7 +146,7 @@ void LuosHAL_ComInit(uint32_t Baudrate)
     HAL_NVIC_EnableIRQ(LUOS_COM_IRQ);
     HAL_NVIC_SetPriority(LUOS_COM_IRQ, 0, 1);
 
-    //Timeout Initialization
+    // Timeout Initialization
     Timer_Prescaler = (MCUFREQ / Baudrate) / TIMERDIV;
     LuosHAL_TimeoutInit();
 
@@ -295,7 +292,7 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     {
         // Start the data buffer transmission
         // **** NO DMA
-        //Copy the data pointer globally alowing to keep it and run the transmission.
+        // Copy the data pointer globally alowing to keep it and run the transmission.
         tx_data = data;
 #ifdef USE_TX_IT
         // Send the first byte
@@ -305,7 +302,7 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
         // Disable Transmission complete interrupt
         LL_USART_DisableIT_TC(LUOS_COM);
 #else
-        data_size_to_transmit = 0; //Reset this value avoiding to check IT TC during collision
+        data_size_to_transmit = 0; // Reset this value avoiding to check IT TC during collision
         // Disable DMA to load new length to be tranmitted
         LL_DMA_DisableChannel(LUOS_DMA, LUOS_DMA_CHANNEL);
         // configure address to be transmitted by DMA
@@ -324,8 +321,8 @@ void LuosHAL_ComTransmit(uint8_t *data, uint16_t size)
     }
     else
     {
-        //wait before send ack
-        //this is a patch du to difference MCU frequency
+        // wait before send ack
+        // this is a patch du to difference MCU frequency
         while (LL_TIM_GetCounter(LUOS_TIMER) < TIMEOUT_ACK)
             ;
         // Enable TX
@@ -399,7 +396,7 @@ static void LuosHAL_TimeoutInit(void)
 {
     LL_TIM_InitTypeDef TimerInit = {0};
 
-    //initialize clock
+    // initialize clock
     LUOS_TIMER_CLOCK_ENABLE();
 
     TimerInit.Autoreload        = DEFAULT_TIMEOUT;
@@ -426,7 +423,7 @@ void LuosHAL_ResetTimeout(uint16_t nbrbit)
     LL_TIM_SetCounter(LUOS_TIMER, 0); // Reset counter
     if (nbrbit != 0)
     {
-        LL_TIM_SetAutoReload(LUOS_TIMER, nbrbit); //reload value
+        LL_TIM_SetAutoReload(LUOS_TIMER, nbrbit); // reload value
         LL_TIM_EnableCounter(LUOS_TIMER);
     }
 }
@@ -457,7 +454,7 @@ void LUOS_TIMER_IRQHANDLER()
  ******************************************************************************/
 static void LuosHAL_GPIOInit(void)
 {
-    //Activate Clock for PIN choosen in luosHAL
+    // Activate Clock for PIN choosen in luosHAL
     PORT_CLOCK_ENABLE();
 
     if ((RX_EN_PIN != DISABLE) || (RX_EN_PORT != DISABLE))
@@ -496,7 +493,7 @@ static void LuosHAL_GPIOInit(void)
     GPIO_InitStruct.Alternate = COM_RX_AF;
     HAL_GPIO_Init(COM_RX_PORT, &GPIO_InitStruct);
 
-    //configure PTP
+    // configure PTP
     LuosHAL_RegisterPTP();
     for (uint8_t i = 0; i < NBR_PORT; i++) /*Configure GPIO pins : PTP_Pin */
     {
@@ -507,7 +504,7 @@ static void LuosHAL_GPIOInit(void)
         HAL_GPIO_Init(PTP[i].Port, &GPIO_InitStruct);
         // Setup PTP lines
         LuosHAL_SetPTPDefaultState(i);
-        //activate IT for PTP
+        // activate IT for PTP
         HAL_NVIC_SetPriority(PTP[i].IRQ, 1, 0);
         HAL_NVIC_EnableIRQ(PTP[i].IRQ);
     }
@@ -584,9 +581,6 @@ void PINOUT_IRQHANDLER(uint16_t GPIO_Pin)
             }
         }
     }
-#ifdef SELFTEST
-    selftest_SetPtpFlag();
-#endif
 }
 /******************************************************************************
  * @brief Set PTP for Detection on branch
@@ -756,7 +750,7 @@ void LuosHAL_FlashReadLuosMemoryInfo(uint32_t addr, uint16_t size, uint8_t *data
 
 /******************************************************************************
  * @brief Set boot mode in shared flash memory
- * @param 
+ * @param
  * @return
  ******************************************************************************/
 void LuosHAL_SetMode(uint8_t mode)
@@ -810,7 +804,7 @@ void LuosHAL_SaveNodeID(uint16_t node_id)
 
 /******************************************************************************
  * @brief software reboot the microprocessor
- * @param 
+ * @param
  * @return
  ******************************************************************************/
 void LuosHAL_Reboot(void)
@@ -831,7 +825,7 @@ void LuosHAL_Reboot(void)
 #ifdef BOOTLOADER_CONFIG
 /******************************************************************************
  * @brief DeInit Bootloader peripherals
- * @param 
+ * @param
  * @return
  ******************************************************************************/
 void LuosHAL_DeInit(void)
@@ -842,7 +836,7 @@ void LuosHAL_DeInit(void)
 
 /******************************************************************************
  * @brief DeInit Bootloader peripherals
- * @param 
+ * @param
  * @return
  ******************************************************************************/
 typedef void (*pFunction)(void); /*!< Function pointer definition */
@@ -867,7 +861,7 @@ void LuosHAL_JumpToApp(uint32_t app_addr)
 
 /******************************************************************************
  * @brief Return bootloader mode saved in flash
- * @param 
+ * @param
  * @return
  ******************************************************************************/
 uint8_t LuosHAL_GetMode(void)

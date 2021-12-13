@@ -14,17 +14,17 @@
 
 #define DISABLE 0x00
 
-//If your MCU do not Have DMA for tx transmit define USE_TX_IT
-//If your MCU have CRC polynome 16 #define USE_CRC_HW 1 else #define USE_CRC_HW 0
+// If your MCU do not Have DMA for tx transmit define USE_TX_IT
+// If your MCU have CRC polynome 16 #define USE_CRC_HW 1 else #define USE_CRC_HW 0
 #ifndef USE_CRC_HW
 #define USE_CRC_HW 1
 #endif
 
 #ifndef MCUFREQ
-#define MCUFREQ 48000000 //MCU frequence
+#define MCUFREQ 48000000 // MCU frequence
 #endif
 #ifndef TIMERDIV
-#define TIMERDIV 1 //clock divider for timer clock chosen
+#define TIMERDIV 1 // clock divider for timer clock chosen
 #endif
 /*******************************************************************************
  * PINOUT CONFIG
