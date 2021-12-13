@@ -13,6 +13,19 @@
 #include <board_config.h>
 #include <Arduino.h>
 
+/*
+DEFAULT LUOSHAL ARDUINO PIN CONFIGURATION
+ +------------+------------------+---------------+
+ | Pin number |     Board pin    | function name |
+ +------------+------------------+---------------+
+ |      ~     |         RX       |       RX      |
+ |      ~     |         TX       |       TX      |
+ |      2     |         D2       |      RXEN     |
+ |      3     |         D3       |      TXEN     |
+ |      6     |         D6       |      PTPA     |
+ |      7     |         D7       |      PTPB     |
+ +------------+------------------+---------------+
+*/
 #define DISABLE 0x00
 
 // If your MCU do not Have DMA for tx transmit #define USE_TX_IT
@@ -41,23 +54,23 @@
 
 // PTP pin definition
 #ifndef PTPA_PIN
-#define PTPA_PIN g_APinDescription[5].ulPin
+#define PTPA_PIN g_APinDescription[6].ulPin
 #endif
 #ifndef PTPA_PORT
-#define PTPA_PORT g_APinDescription[5].ulPort
+#define PTPA_PORT g_APinDescription[6].ulPort
 #endif
 #ifndef PTPA_IRQ
-#define PTPA_IRQ g_APinDescription[5].ulExtInt // see EXTINT
+#define PTPA_IRQ g_APinDescription[6].ulExtInt // see EXTINT
 #endif
 
 #ifndef PTPB_PIN
-#define PTPB_PIN g_APinDescription[6].ulPin
+#define PTPB_PIN g_APinDescription[7].ulPin
 #endif
 #ifndef PTPB_PORT
-#define PTPB_PORT g_APinDescription[6].ulPort
+#define PTPB_PORT g_APinDescription[7].ulPort
 #endif
 #ifndef PTPB_IRQ
-#define PTPB_IRQ g_APinDescription[6].ulExtInt // see EXTINT
+#define PTPB_IRQ g_APinDescription[7].ulExtInt // see EXTINT
 #endif
 
 // COM pin definition
