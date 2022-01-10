@@ -27,6 +27,13 @@
  * Variables
  ******************************************************************************/
 
+typedef struct ll_timestamp
+{
+    uint32_t lower_timestamp;
+    uint64_t higher_timestamp;
+    uint64_t start_offset;
+} ll_timestamp_t;
+
 /*******************************************************************************
  * Function
  ******************************************************************************/
@@ -61,5 +68,10 @@ uint16_t LuosHAL_GetNodeID(void);
 void LuosHAL_EraseMemory(uint32_t, uint16_t);
 void LuosHAL_ProgramFlash(uint32_t, uint16_t, uint8_t *);
 #endif
+
+// timestamp functions
+uint64_t LuosHAL_GetTimestamp(void);
+void LuosHAL_StartTimestamp(void);
+void LuosHAL_StopTimestamp(void);
 
 #endif /* _LUOSHAL_H_ */

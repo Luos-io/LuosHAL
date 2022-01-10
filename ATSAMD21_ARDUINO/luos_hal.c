@@ -41,6 +41,9 @@ volatile uint8_t *tx_data               = 0;
 static DmacDescriptor write_back_section __attribute__((aligned(8)));
 static DmacDescriptor descriptor_section __attribute__((aligned(8)));
 #endif
+
+// timestamp variable
+static ll_timestamp_t ll_timestamp;
 /*******************************************************************************
  * Function
  ******************************************************************************/
@@ -453,6 +456,42 @@ void LUOS_TIMER_IRQHANDLER()
         }
     }
 }
+
+/******************************************************************************
+ * @brief Luos GetTimestamp
+ * @param None
+ * @return uint64_t
+ ******************************************************************************/
+uint64_t LuosHAL_GetTimestamp(void)
+{
+    ll_timestamp.lower_timestamp  = (SysTick->LOAD - SysTick->VAL) * (1000000000 / MCUFREQ);
+    ll_timestamp.higher_timestamp = LuosHAL_GetSystick() - ll_timestamp.start_offset;
+
+    return ll_timestamp.higher_timestamp * 1000000 + (uint64_t)ll_timestamp.lower_timestamp;
+}
+
+/******************************************************************************
+ * @brief Luos start Timestamp
+ * @param None
+ * @return None
+ ******************************************************************************/
+void LuosHAL_StartTimestamp(void)
+{
+    ll_timestamp.start_offset = LuosHAL_GetSystick();
+}
+
+/******************************************************************************
+ * @brief Luos stop Timestamp
+ * @param None
+ * @return None
+ ******************************************************************************/
+void LuosHAL_StopTimestamp(void)
+{
+    ll_timestamp.lower_timestamp  = 0;
+    ll_timestamp.higher_timestamp = 0;
+    ll_timestamp.start_offset     = 0;
+}
+
 /******************************************************************************
  * @brief Initialisation GPIO
  * @param None
