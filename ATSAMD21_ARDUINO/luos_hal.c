@@ -187,7 +187,8 @@ void LuosHAL_SetTxState(uint8_t Enable)
 {
     if (Enable == true)
     {
-        PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg &= ~PORT_PINCFG_PULLEN; // Tx push pull
+        PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg = PORT_PINCFG_RESETVALUE; // no pin mux / no input /  no pull / low streght
+        PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg |= PORT_PINCFG_PMUXEN;    // mux en
         if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
         {
             PORT->Group[TX_EN_PORT].OUTSET.reg = (1 << TX_EN_PIN); // enable Tx
@@ -195,7 +196,9 @@ void LuosHAL_SetTxState(uint8_t Enable)
     }
     else
     {
-        PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg |= PORT_PINCFG_PULLEN; // Tx open drain
+        PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg = PORT_PINCFG_RESETVALUE; // no pin mux / no input /  no pull / low streght
+        PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg |= PORT_PINCFG_PULLEN;    // Enable Pull
+        PORT->Group[COM_TX_PORT].OUTSET.reg = (1 << COM_TX_PIN);                  // Pull up
         if ((TX_EN_PIN != DISABLE) || (TX_EN_PORT != DISABLE))
         {
             PORT->Group[TX_EN_PORT].OUTCLR.reg = (1 << TX_EN_PIN); // disable Tx
@@ -551,8 +554,8 @@ static void LuosHAL_GPIOInit(void)
 
     /*Configure GPIO pin : TxPin */
     PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg = PORT_PINCFG_RESETVALUE;                    // no pin mux / no input /  no pull / low streght
-    PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg |= PORT_PINCFG_PMUXEN;                       // mux en
-    PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg |= PORT_PINCFG_PULLEN;                       // Tx open drain
+    PORT->Group[COM_TX_PORT].PINCFG[COM_TX_PIN].reg |= PORT_PINCFG_PULLEN;                       // Enable Pull
+    PORT->Group[COM_TX_PORT].OUTSET.reg = (1 << COM_TX_PIN);                                     // Pull up
     PORT->Group[COM_TX_PORT].PMUX[COM_TX_PIN >> 1].reg |= (COM_TX_AF << (4 * (COM_TX_PIN % 2))); // mux to sercom
 
     /*Configure GPIO pin : RxPin */
