@@ -169,7 +169,7 @@
  ******************************************************************************/
 #define FLASH_END 0x0801FFFF
 
-#define SHARED_MEMORY_ADDRESS 0x0800C000
+#define SHARED_MEMORY_ADDRESS ((uint32_t)(ADDRESS_LAST_PAGE_FLASH - FLASH_PAGE_SIZE))
 #define APP_ADDRESS           (uint32_t)0x0800C800
 
 #endif /* _LUOSHAL_CONFIG_H_ */
