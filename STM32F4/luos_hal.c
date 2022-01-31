@@ -814,7 +814,7 @@ void LuosHAL_SetMode(uint8_t mode)
      * the application crashes, that's why we only erase the flash from the
      * bootloader
      ******************************* WARNING **************************************/
-    if (mode == 0x01)
+    if ((mode == 0x01) && (mode == 0x02))
     {
         // erase sector
         HAL_FLASH_Unlock();
