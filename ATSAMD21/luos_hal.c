@@ -978,7 +978,7 @@ void LuosHAL_EraseMemory(uint32_t address, uint16_t size)
     uint32_t erase_address  = APP_ADDRESS;
     const uint32_t row_size = 256;
 
-    for (erase_address = APP_ADDRESS; erase_address < FLASH_END; erase_address += row_size)
+    for (erase_address = APP_ADDRESS; erase_address < ADDRESS_LAST_PAGE_FLASH; erase_address += row_size)
     {
         // wait if NVM controller is busy
         while ((NVMCTRL_REGS->NVMCTRL_INTFLAG & NVMCTRL_INTFLAG_READY_Msk) == 0)
