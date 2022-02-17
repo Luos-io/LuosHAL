@@ -75,10 +75,10 @@ void LuosHAL_Init(void)
     // IO Initialization
     LuosHAL_GPIOInit();
 
-    //Flash Initialization
+    // Flash Initialization
     LuosHAL_FlashInit();
 
-    //CRC Initialization
+    // CRC Initialization
     LuosHAL_CRCInit();
 
     // Com Initialization
@@ -937,7 +937,7 @@ void LuosHAL_EraseMemory(uint32_t address, uint16_t size)
     uint32_t page_to_erase       = address;
 
     // compute number of sectors to erase
-    nb_sectors_to_erase = (FLASH_END + 1 - address) / (uint32_t)PAGE_SIZE;
+    nb_sectors_to_erase = (ADDRESS_LAST_PAGE_FLASH - address) / (uint32_t)PAGE_SIZE;
 
     uint32_t page_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
