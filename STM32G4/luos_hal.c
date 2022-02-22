@@ -941,7 +941,7 @@ void LuosHAL_EraseMemory(uint32_t address, uint16_t size)
     uint32_t page_to_erase       = address / (uint32_t)PAGE_SIZE;
 
     // compute number of sectors to erase
-    nb_sectors_to_erase = ((uint32_t)(FLASH_BASE + 0x40000 - FLASH_PAGE_SIZE) - (uint32_t)address) / (uint32_t)PAGE_SIZE;
+    nb_sectors_to_erase = ((uint32_t)(FLASH_BASE + END_ERASE_BOOTLOADER) - (uint32_t)address) / (uint32_t)PAGE_SIZE;
 
     uint32_t page_error = 0;
     FLASH_EraseInitTypeDef s_eraseinit;
