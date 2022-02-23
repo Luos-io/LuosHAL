@@ -33,7 +33,12 @@ typedef struct
 
 Port_t PTP[NBR_PORT];
 
-volatile uint16_t timoutclockcnt        = 0;
+uint8_t PTP_ll[NBR_PORT] = {
+    6,
+    7};
+
+volatile uint16_t timoutclockcnt
+    = 0;
 volatile uint16_t data_size_to_transmit = 0;
 volatile uint8_t *tx_data               = 0;
 
@@ -650,10 +655,10 @@ void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr)
     uint32_t Config   = 0;
 
     // Pull Down / IT mode / Rising Edge
-    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg = PORT_PINCFG_RESETVALUE; // no pin mux / no input /  no pull / low streght
-    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg |= PORT_PINCFG_PMUXEN;    // mux en
-    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg |= PORT_PINCFG_PULLEN;    // pull en
-    PORT->Group[PTP[PTPNbr].Port].OUTCLR.reg = (1 << PTP[PTPNbr].Pin);                  // pull down
+    pinMode(PTP_ll[PTPNbr], INPUT_PULLDOWN);
+    // attachInterrupt(PTP[PTPNbr].Pin, LuosHAL_PinoutIRQHandler, RISING);
+
+    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg |= PORT_PINCFG_PMUXEN; // mux en
     if (PTP[PTPNbr].Irq < 8)
     {
         Config   = 0;
@@ -680,10 +685,9 @@ void LuosHAL_SetPTPReverseState(uint8_t PTPNbr)
     uint32_t Config   = 0;
 
     // Pull Down / IT mode / Falling Edge
-    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg = PORT_PINCFG_RESETVALUE; // no pin mux / no input /  no pull / low streght
-    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg |= PORT_PINCFG_PMUXEN;    // mux en
-    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg |= PORT_PINCFG_PULLEN;    // pull en
-    PORT->Group[PTP[PTPNbr].Port].OUTCLR.reg = (1 << PTP[PTPNbr].Pin);                  // pull down
+    pinMode(PTP_ll[PTPNbr], INPUT_PULLDOWN);
+
+    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg |= PORT_PINCFG_PMUXEN; // mux en
     if (PTP[PTPNbr].Irq < 8)
     {
         Config   = 0;
@@ -707,12 +711,11 @@ void LuosHAL_SetPTPReverseState(uint8_t PTPNbr)
 void LuosHAL_PushPTP(uint8_t PTPNbr)
 {
     // Pull Down / Output mode
-    EIC->INTENCLR.reg                                         = (1 << PTP[PTPNbr].Irq); // disable IT
-    EIC->INTFLAG.reg                                          = (1 << PTP[PTPNbr].Irq); // clear IT flag
-    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg = PORT_PINCFG_RESETVALUE; // no pin mux / no input /  no pull / low streght
-    // PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin] |= PORT_PINCFG_PULLEN; //pull en
-    PORT->Group[PTP[PTPNbr].Port].DIRSET.reg = (1 << PTP[PTPNbr].Pin); // Output
-    PORT->Group[PTP[PTPNbr].Port].OUTSET.reg = (1 << PTP[PTPNbr].Pin); // pull down
+    EIC->INTENCLR.reg = (1 << PTP[PTPNbr].Irq); // disable IT
+    EIC->INTFLAG.reg  = (1 << PTP[PTPNbr].Irq); // clear IT flag
+
+    pinMode(PTP_ll[PTPNbr], OUTPUT);
+    digitalWrite(PTP_ll[PTPNbr], HIGH);
 }
 /******************************************************************************
  * @brief Get PTP line
@@ -722,14 +725,11 @@ void LuosHAL_PushPTP(uint8_t PTPNbr)
 uint8_t LuosHAL_GetPTPState(uint8_t PTPNbr)
 {
     // Pull Down / Input mode
-    EIC->INTENCLR.reg                                         = (1 << PTP[PTPNbr].Irq); // disable IT
-    EIC->INTFLAG.reg                                          = (1 << PTP[PTPNbr].Irq); // clear IT flag
-    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg = PORT_PINCFG_RESETVALUE; // no pin mux / no input /  no pull / low streght
-    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg |= PORT_PINCFG_INEN;      // input
-    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg |= PORT_PINCFG_PULLEN;    // pull en
-    PORT->Group[PTP[PTPNbr].Port].DIRCLR.reg = (1 << PTP[PTPNbr].Pin);                  // Output
-    PORT->Group[PTP[PTPNbr].Port].OUTCLR.reg = (1 << PTP[PTPNbr].Pin);                  // pull down
-    return (((PORT->Group[PTP[PTPNbr].Port].IN.reg >> PTP[PTPNbr].Pin)) & 0x01);
+    EIC->INTENCLR.reg = (1 << PTP[PTPNbr].Irq); // disable IT
+    EIC->INTFLAG.reg  = (1 << PTP[PTPNbr].Irq); // clear IT flag
+
+    pinMode(PTP_ll[PTPNbr], INPUT_PULLDOWN);
+    return digitalRead(PTP_ll[PTPNbr]);
 }
 /******************************************************************************
  * @brief Initialize CRC Process
