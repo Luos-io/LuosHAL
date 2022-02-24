@@ -619,7 +619,7 @@ static void LuosHAL_RegisterPTP(void)
  * @param GPIO IT line
  * @return None
  ******************************************************************************/
-void PINOUT_IRQHANDLER()
+void LuosHAL_PinoutIRQHandler()
 {
     uint32_t FlagIT = 0;
     ////Process for Tx Lock Detec
@@ -635,7 +635,6 @@ void PINOUT_IRQHANDLER()
             FlagIT = (EIC->INTFLAG.reg & (1 << PTP[i].Irq));
             if (FlagIT)
             {
-                EIC->INTFLAG.reg = (uint32_t)(1 << PTP[i].Irq);
                 PortMng_PtpHandler(i);
                 break;
             }
@@ -649,28 +648,10 @@ void PINOUT_IRQHANDLER()
  ******************************************************************************/
 void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr)
 {
-    uint32_t Position = 0;
-    uint32_t Config   = 0;
-
     // Pull Down / IT mode / Rising Edge
     pinMode(PTP_ll[PTPNbr], INPUT_PULLDOWN);
-    // attachInterrupt(PTP[PTPNbr].Pin, LuosHAL_PinoutIRQHandler, RISING);
-
-    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg |= PORT_PINCFG_PMUXEN; // mux en
-    if (PTP[PTPNbr].Irq < 8)
-    {
-        Config   = 0;
-        Position = PTP[PTPNbr].Irq << 2;
-    }
-    else
-    {
-        Config   = 1;
-        Position = (PTP[PTPNbr].Irq - 8) << 2;
-    }
-    EIC->CONFIG[Config].reg &= ~(EIC_CONFIG_SENSE0_Msk << Position);   // reset sense mode
-    EIC->CONFIG[Config].reg |= EIC_CONFIG_SENSE0_RISE_Val << Position; // Rising EDGE
-    EIC->INTFLAG.reg  = (1 << PTP[PTPNbr].Irq);                        // clear IT flag
-    EIC->INTENSET.reg = (1 << PTP[PTPNbr].Irq);                        // enable IT
+    EIC->INTFLAG.reg = (1 << PTP[PTPNbr].Irq); // clear IT flag
+    attachInterrupt(digitalPinToInterrupt(PTP_ll[PTPNbr]), LuosHAL_PinoutIRQHandler, RISING);
 }
 /******************************************************************************
  * @brief Set PTP for reverse detection on branch
@@ -679,27 +660,10 @@ void LuosHAL_SetPTPDefaultState(uint8_t PTPNbr)
  ******************************************************************************/
 void LuosHAL_SetPTPReverseState(uint8_t PTPNbr)
 {
-    uint32_t Position = 0;
-    uint32_t Config   = 0;
-
     // Pull Down / IT mode / Falling Edge
     pinMode(PTP_ll[PTPNbr], INPUT_PULLDOWN);
-
-    PORT->Group[PTP[PTPNbr].Port].PINCFG[PTP[PTPNbr].Pin].reg |= PORT_PINCFG_PMUXEN; // mux en
-    if (PTP[PTPNbr].Irq < 8)
-    {
-        Config   = 0;
-        Position = PTP[PTPNbr].Irq << 2;
-    }
-    else
-    {
-        Config   = 1;
-        Position = (PTP[PTPNbr].Irq - 8) << 2;
-    }
-    EIC->CONFIG[Config].reg &= ~(EIC_CONFIG_SENSE0_Msk << Position);   // reset sense mode
-    EIC->CONFIG[Config].reg |= EIC_CONFIG_SENSE0_FALL_Val << Position; // Falling EDGE
-    EIC->INTFLAG.reg  = (1 << PTP[PTPNbr].Irq);                        // clear IT flag
-    EIC->INTENSET.reg = (1 << PTP[PTPNbr].Irq);                        // enable IT
+    EIC->INTFLAG.reg = (1 << PTP[PTPNbr].Irq); // clear IT flag
+    attachInterrupt(digitalPinToInterrupt(PTP_ll[PTPNbr]), LuosHAL_PinoutIRQHandler, FALLING);
 }
 /******************************************************************************
  * @brief Set PTP line
@@ -709,8 +673,7 @@ void LuosHAL_SetPTPReverseState(uint8_t PTPNbr)
 void LuosHAL_PushPTP(uint8_t PTPNbr)
 {
     // Pull Down / Output mode
-    EIC->INTENCLR.reg = (1 << PTP[PTPNbr].Irq); // disable IT
-    EIC->INTFLAG.reg  = (1 << PTP[PTPNbr].Irq); // clear IT flag
+    detachInterrupt(digitalPinToInterrupt(PTP_ll[PTPNbr]));
 
     pinMode(PTP_ll[PTPNbr], OUTPUT);
     digitalWrite(PTP_ll[PTPNbr], HIGH);
@@ -723,8 +686,7 @@ void LuosHAL_PushPTP(uint8_t PTPNbr)
 uint8_t LuosHAL_GetPTPState(uint8_t PTPNbr)
 {
     // Pull Down / Input mode
-    EIC->INTENCLR.reg = (1 << PTP[PTPNbr].Irq); // disable IT
-    EIC->INTFLAG.reg  = (1 << PTP[PTPNbr].Irq); // clear IT flag
+    detachInterrupt(digitalPinToInterrupt(PTP_ll[PTPNbr]));
 
     pinMode(PTP_ll[PTPNbr], INPUT_PULLDOWN);
     return digitalRead(PTP_ll[PTPNbr]);
