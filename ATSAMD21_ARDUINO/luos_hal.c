@@ -627,8 +627,6 @@ void PINOUT_IRQHANDLER()
     {
         ctx.tx.lock = true;
         LuosHAL_ResetTimeout(DEFAULT_TIMEOUT);
-        EIC->INTFLAG.reg  = (uint32_t)(1 << TX_LOCK_DETECT_IRQ);
-        EIC->INTENCLR.reg = (1 << TX_LOCK_DETECT_IRQ);
     }
     else
     {
