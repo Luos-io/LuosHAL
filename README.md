@@ -9,7 +9,7 @@
 
 This repository regroups all of the HAL (Hardware Abstraction Layers) routines usable with Luos : https://github.com/Luos-io/Luos
 You can choose the one you need for your microcontroller or create your own following our templates and guidelines.
-Do not hesitate to share your project and ask us about features on [our forum](https://community.luos.io/).
+Do not hesitate to share your project and ask us about features on [our Discord](http://bit.ly/JoinLuosDiscord).
 
 # Introduction to Luos :bulb:
 
@@ -21,20 +21,17 @@ This repository contains the Luos library that you will need to include in your 
 
 Watch this video for additional details:
 
-<a href="https://youtu.be/xQe3z0M_FE8"><img border="0" alt="Luos video" src="https://uploads-ssl.webflow.com/601a78a2b5d030260a40b7ad/6035128c3e63c132f1743d13_youtube.jpeg" width="640" height="360"></a>
+<a href="https://www.youtube.com/watch?v=ujh0xNE3TZ8"><img border="0" alt="Luos video" src="https://uploads-ssl.webflow.com/601a78a2b5d030260a40b7ad/62220e861127837cb8844f56_What%20is%20Luos%20Engine%3F%20Video.png" width="640" height="360"></a>
 
 ## Unfamiliar with Luos?
 
-→ You can start by reading the [Basics](https://docs.luos.io/pages/luos-technology/basics/basics.html) page.
+→ You can start by reading the [Basics](https://docs.luos.io/docs/luos-technology/basics/) page.
 
 ## You want to tune your device's behavior?
 
-→ Luos provides a [Demonstration board](https://docs.luos.io/pages/tutorials/demo-boards/luos-demo-boards.html) and [Example demonstration boards](https://github.com/Luos-io/Examples/tree/master/Hardware). You can use them as example or to develop your own project.
-.
+→ You can make your own embedded [Luos apps](https://docs.luos.io/docs/api/list).
 
-→ You can make your own embedded [Luos apps](https://docs.luos.io/pages/luos-technology/services/service_api.html).
-
-→ You can control your devices through a [Gate](https://docs.luos.io/pages/tools/gate.html) service using [Pyluos](https://docs.luos.io/pages/tools/pyluos.html).
+→ You can control your devices through a [Gate](https://docs.luos.io/docs/tools/gate) service using [Pyluos](https://docs.luos.io/docs/tools/pyluos).
 
 If you have questions about a specific topic, you can refer or ask it on the [Luos' subreddit](https://www.reddit.com/r/Luos). And if you have suggestions about this documentation, don't hesitate to create pull requests.
 

@@ -124,9 +124,9 @@ DEFAULT LUOSHAL ARDUINO PIN CONFIGURATION
 #define COM_RX_POS 3 // PAD3
 #endif
 
-#ifndef PINOUT_IRQHANDLER
-#define PINOUT_IRQHANDLER() EIC_Handler()
-#endif
+// #ifndef PINOUT_IRQHANDLER
+// #define PINOUT_IRQHANDLER() EIC_Handler()
+// #endif
 
 /*******************************************************************************
  * COM CONFIG
